@@ -1,9 +1,18 @@
 #include <cstdio>
+#include <cstdint>
+#include <cstdlib>
 #include <SDL.h>
+
+constinit bool g_IsRunning = false;
 
 constinit SDL_Window* g_Window = nullptr;
 constinit SDL_Renderer* g_Renderer = nullptr;
-constinit bool g_IsRunning = false;
+
+constinit uint32_t* g_ColorBuffer = nullptr;
+constinit SDL_Texture* g_ColorBufferTexture = nullptr;
+
+constinit int g_WindowWidth = 800;
+constinit int g_WindowHeight = 600;
 
 static bool InitializeWindow()
 {
@@ -18,8 +27,8 @@ static bool InitializeWindow()
         nullptr,
         SDL_WINDOWPOS_CENTERED,
         SDL_WINDOWPOS_CENTERED,
-        800,
-        600,
+        g_WindowWidth,
+        g_WindowHeight,
         SDL_WINDOW_RESIZABLE
     );
     if (!g_Window)
@@ -41,6 +50,15 @@ static bool InitializeWindow()
 
 static void Setup()
 {
+    size_t size = sizeof(uint32_t) * g_WindowWidth * g_WindowHeight;
+    g_ColorBuffer = (uint32_t*)std::malloc(size);
+
+    g_ColorBufferTexture = SDL_CreateTexture(
+        g_Renderer,
+        SDL_PIXELFORMAT_ARGB8888,
+        SDL_TEXTUREACCESS_STREAMING,
+        g_WindowWidth,
+        g_WindowHeight);
 }
 
 static void ProcessInput()
@@ -71,12 +89,50 @@ static void Update()
 {
 }
 
+static void RenderColorBuffer()
+{
+    SDL_UpdateTexture(
+        g_ColorBufferTexture,
+        nullptr,
+        g_ColorBuffer,
+        (int)(g_WindowWidth * sizeof(uint32_t)));
+    SDL_RenderCopy(
+        g_Renderer,
+        g_ColorBufferTexture,
+        nullptr,
+        nullptr);
+}
+
+// Clear our custom color buffer to the given color.
+static void ClearColorBuffer(uint32_t color)
+{
+    for (int row = 0; row < g_WindowHeight; row++)
+    {
+        for (int col = 0; col < g_WindowWidth; col++)
+        {
+            const int pixelIndex = (g_WindowWidth * row) + col;
+            g_ColorBuffer[pixelIndex] = color;
+        }
+    }
+}
+
 static void Render()
 {
-    SDL_SetRenderDrawColor(g_Renderer, 255, 0, 0, 255);
+    SDL_SetRenderDrawColor(g_Renderer, 0, 0, 0, 255);
     SDL_RenderClear(g_Renderer);
 
+    ClearColorBuffer(0xFFFFFF00);
+    RenderColorBuffer();
+
     SDL_RenderPresent(g_Renderer);
+}
+
+static void DestroyWindow()
+{
+    std::free(g_ColorBuffer);
+    SDL_DestroyRenderer(g_Renderer);
+    SDL_DestroyWindow(g_Window);
+    SDL_Quit();
 }
 
 int main(int argc, char* argv[])
@@ -93,6 +149,8 @@ int main(int argc, char* argv[])
 
         Render();
     }
+
+    DestroyWindow();
 
     return 0;
 }
