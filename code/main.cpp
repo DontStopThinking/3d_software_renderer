@@ -33,7 +33,7 @@ static bool InitializeWindow()
         SDL_WINDOWPOS_CENTERED,
         g_WindowWidth,
         g_WindowHeight,
-        SDL_WINDOW_RESIZABLE
+        0
     );
     if (!g_Window)
     {
@@ -121,12 +121,42 @@ static void ClearColorBuffer(uint32_t color)
     }
 }
 
+static void DrawGrid()
+{
+    for (int y = 0; y < g_WindowHeight; y++)
+    {
+        for (int x = 0; x < g_WindowWidth; x++)
+        {
+            if (x % 10 == 0 || y % 10 == 0)
+            {
+                g_ColorBuffer.m_Buffer[(g_WindowWidth * y) + x] = 0xFF333333;
+            }
+        }
+    }
+}
+
+static void DrawRectangle(int x, int y, int width, int height, uint32_t color)
+{
+    for (int yy = y; yy < height; yy++)
+    {
+        for (int xx = x; xx < width; xx++)
+        {
+            g_ColorBuffer.m_Buffer[(g_WindowWidth * yy) + xx] = color;
+        }
+    }
+}
+
 static void Render()
 {
     SDL_SetRenderDrawColor(g_Renderer, 0, 0, 0, 255);
     SDL_RenderClear(g_Renderer);
 
-    ClearColorBuffer(0xFFFFFF00);
+    ClearColorBuffer(0xFF000000);
+
+    DrawGrid();
+
+    DrawRectangle(100, 100, 300, 150, 0xFFFF00FF);
+
     RenderColorBuffer();
 
     SDL_RenderPresent(g_Renderer);
