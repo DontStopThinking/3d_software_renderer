@@ -8,7 +8,11 @@ constinit bool g_IsRunning = false;
 constinit SDL_Window* g_Window = nullptr;
 constinit SDL_Renderer* g_Renderer = nullptr;
 
-constinit uint32_t* g_ColorBuffer = nullptr;
+struct ColorBuffer
+{
+    uint32_t* m_Buffer;
+    size_t m_Size;
+} g_ColorBuffer;
 constinit SDL_Texture* g_ColorBufferTexture = nullptr;
 
 constinit int g_WindowWidth = 800;
@@ -51,7 +55,8 @@ static bool InitializeWindow()
 static void Setup()
 {
     size_t size = sizeof(uint32_t) * g_WindowWidth * g_WindowHeight;
-    g_ColorBuffer = (uint32_t*)std::malloc(size);
+    g_ColorBuffer.m_Buffer = (uint32_t*)std::malloc(size);
+    g_ColorBuffer.m_Size = size;
 
     g_ColorBufferTexture = SDL_CreateTexture(
         g_Renderer,
@@ -94,7 +99,7 @@ static void RenderColorBuffer()
     SDL_UpdateTexture(
         g_ColorBufferTexture,
         nullptr,
-        g_ColorBuffer,
+        g_ColorBuffer.m_Buffer,
         (int)(g_WindowWidth * sizeof(uint32_t)));
     SDL_RenderCopy(
         g_Renderer,
@@ -111,7 +116,7 @@ static void ClearColorBuffer(uint32_t color)
         for (int col = 0; col < g_WindowWidth; col++)
         {
             const int pixelIndex = (g_WindowWidth * row) + col;
-            g_ColorBuffer[pixelIndex] = color;
+            g_ColorBuffer.m_Buffer[pixelIndex] = color;
         }
     }
 }
@@ -129,7 +134,9 @@ static void Render()
 
 static void DestroyWindow()
 {
-    std::free(g_ColorBuffer);
+    std::free(g_ColorBuffer.m_Buffer);
+    g_ColorBuffer = {};
+
     SDL_DestroyRenderer(g_Renderer);
     SDL_DestroyWindow(g_Window);
     SDL_Quit();
