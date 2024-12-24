@@ -1,7 +1,8 @@
 #include <cstdio>
-#include <cstdint>
 #include <cstdlib>
 #include <SDL.h>
+
+#include "common.h"
 
 constinit bool g_IsRunning = false;
 
@@ -10,7 +11,7 @@ constinit SDL_Renderer* g_Renderer = nullptr;
 
 struct ColorBuffer
 {
-    uint32_t* m_Buffer;
+    u32* m_Buffer;
     size_t m_Size;
 } g_ColorBuffer;
 constinit SDL_Texture* g_ColorBufferTexture = nullptr;
@@ -26,7 +27,7 @@ static bool InitializeWindow()
         return false;
     }
 
-    // Create an SDL window.
+    // NOTE(sbalse): Create an SDL window.
     SDL_Window* g_Window = SDL_CreateWindow(
         nullptr,
         SDL_WINDOWPOS_CENTERED,
@@ -41,7 +42,7 @@ static bool InitializeWindow()
         return false;
     }
 
-    // Create a SDL renderer.
+    // NOTE(sbalse): Create a SDL renderer.
     g_Renderer = SDL_CreateRenderer(g_Window, -1, 0);
     if (!g_Renderer)
     {
@@ -54,8 +55,8 @@ static bool InitializeWindow()
 
 static void Setup()
 {
-    size_t size = sizeof(uint32_t) * g_WindowWidth * g_WindowHeight;
-    g_ColorBuffer.m_Buffer = (uint32_t*)std::malloc(size);
+    size_t size = sizeof(u32) * g_WindowWidth * g_WindowHeight;
+    g_ColorBuffer.m_Buffer = reinterpret_cast<u32*>(std::malloc(size)); // NOTE(sbalse): Allocate the color buffer
     g_ColorBuffer.m_Size = size;
 
     g_ColorBufferTexture = SDL_CreateTexture(
@@ -81,6 +82,7 @@ static void ProcessInput()
 
         case SDL_KEYDOWN:
         {
+            // NOTE(sbalse): ESCAPE to quit
             if (event.key.keysym.sym == SDLK_ESCAPE)
             {
                 g_IsRunning = false;
@@ -100,7 +102,7 @@ static void RenderColorBuffer()
         g_ColorBufferTexture,
         nullptr,
         g_ColorBuffer.m_Buffer,
-        (int)(g_WindowWidth * sizeof(uint32_t)));
+        static_cast<int>(g_WindowWidth * sizeof(u32)));
     SDL_RenderCopy(
         g_Renderer,
         g_ColorBufferTexture,
@@ -108,8 +110,8 @@ static void RenderColorBuffer()
         nullptr);
 }
 
-// Clear our custom color buffer to the given color.
-static void ClearColorBuffer(uint32_t color)
+// NOTE(sbalse): Clear our custom color buffer to the given color.
+static void ClearColorBuffer(u32 color)
 {
     for (int row = 0; row < g_WindowHeight; row++)
     {
@@ -135,7 +137,7 @@ static void DrawGrid()
     }
 }
 
-static void DrawRectangle(int x, int y, int width, int height, uint32_t color)
+static void DrawRectangle(int x, int y, int width, int height, u32 color)
 {
     for (int yy = y; yy < height; yy++)
     {
