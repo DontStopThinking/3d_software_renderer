@@ -8,9 +8,17 @@
 
 constinit bool g_IsRunning = false;
 
+// NOTE(sbalse): Declare an array of vectors/points
+constexpr int NUM_POINTS = 9 * 9 * 9;
+constinit Vec3 g_CubePoints[NUM_POINTS] = {}; // NOTE(sbalse): A cube
+
+constinit Vec2 g_ProjectedPoints[NUM_POINTS] = {};
+
+constexpr int FOV_FACTOR = 128;
+
 static void Setup()
 {
-    size_t size = sizeof(u32) * g_WindowWidth * g_WindowHeight;
+    const size_t size = sizeof(u32) * g_WindowWidth * g_WindowHeight;
     // NOTE(sbalse): Allocate the color buffer.
     g_ColorBuffer.m_Buffer = reinterpret_cast<u32*>(std::malloc(size));
     g_ColorBuffer.m_Size = size;
@@ -21,6 +29,21 @@ static void Setup()
         SDL_TEXTUREACCESS_STREAMING,
         g_WindowWidth,
         g_WindowHeight);
+
+    int pointIndex = 0;
+    // NOTE(sbalse): Start loading our array of vectors. From -1 to 1.
+    for (float x = -1; x <= 1; x += 0.25) // NOTE(sbalse): Increment by 0.25 as 2 / 9 ~= 0.25
+    {
+        for (float y = -1; y <= 1; y += 0.25)
+        {
+            for (float z = -1; z <= 1; z += 0.25)
+            {
+                const Vec3 point = { .m_X = x, .m_Y = y, .m_Z = z };
+                g_CubePoints[pointIndex] = point;
+                ++pointIndex;
+            }
+        }
+    }
 }
 
 static void ProcessInput()
@@ -48,20 +71,48 @@ static void ProcessInput()
     }
 }
 
+// NOTE(sbalse): Take a 3D vector and return a 2D point.
+static Vec2 Project(const Vec3 point)
+{
+    const Vec2 projectedPoint =
+    {
+        .m_X = point.m_X * FOV_FACTOR,
+        .m_Y = point.m_Y * FOV_FACTOR,
+    };
+
+    return projectedPoint;
+}
+
 static void Update()
 {
+    for (int i = 0; i < NUM_POINTS; i++)
+    {
+        const Vec3 point = g_CubePoints[i];
+
+        // NOTE(sbalse): Project the current point
+        const Vec2 projectedPoint = Project(point);
+
+        // NOTE(sba;se): Save the projected 2D vector in the array of projected points.
+        g_ProjectedPoints[i] = projectedPoint;
+    }
 }
 
 static void Render()
 {
-    SDL_SetRenderDrawColor(g_Renderer, 0, 0, 0, 255);
-    SDL_RenderClear(g_Renderer);
     ClearColorBuffer(BLACK);
 
-    DrawGrid();
+    //DrawGrid();
 
-    DrawPixel(20, 20, YELLOW);
-    DrawRectangle(100, 100, 300, 150, MAGENTA);
+    // NOTE(sbalse): Loop all projected points and render them.
+    for (int i = 0; i < NUM_POINTS; i++)
+    {
+        const Vec2 projectedPoint = g_ProjectedPoints[i];
+
+        // NOTE(sbalse): Move the projected point to the center of our window.
+        const int translatedX = static_cast<int>(projectedPoint.m_X) + (g_WindowWidth / 2);
+        const int translatedY = static_cast<int>(projectedPoint.m_Y) + (g_WindowHeight / 2);
+        DrawRectangle(translatedX, translatedY, 4, 4, YELLOW);
+    }
 
     RenderColorBuffer();
 
@@ -71,6 +122,11 @@ static void Render()
 int main(int argc, char* argv[])
 {
     g_IsRunning = InitializeWindow("3D Renderer");
+
+    if (!g_IsRunning)
+    {
+        return EXIT_FAILURE;
+    }
 
     Setup();
 
@@ -85,5 +141,5 @@ int main(int argc, char* argv[])
 
     DestroyWindow();
 
-    return 0;
+    return EXIT_SUCCESS;
 }

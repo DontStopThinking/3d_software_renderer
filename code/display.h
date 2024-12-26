@@ -26,8 +26,13 @@ extern constinit int g_WindowHeight;
 
 bool InitializeWindow(const std::string_view windowTitle);
 void DrawGrid();
-void DrawPixel(int x, int y, u32 color);
-void DrawRectangle(int x, int y, int width, int height, u32 color);
+void DrawPixel(const int x, const int y, const u32 color);
+void DrawRectangle(
+    const int x,
+    const int y,
+    const int width,
+    const int height,
+    const u32 color);
 void RenderColorBuffer();
 void ClearColorBuffer(u32 color);
 void DestroyWindow();
