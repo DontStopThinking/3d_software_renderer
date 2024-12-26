@@ -9,7 +9,7 @@ constinit ColorBuffer g_ColorBuffer = {};
 constinit int g_WindowWidth = 800;
 constinit int g_WindowHeight = 600;
 
-bool InitializeWindow()
+bool InitializeWindow(const std::string_view windowTitle)
 {
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
     {
@@ -19,7 +19,7 @@ bool InitializeWindow()
 
     // NOTE(sbalse): Create an SDL window.
     SDL_Window* g_Window = SDL_CreateWindow(
-        nullptr,
+        windowTitle.data(),
         SDL_WINDOWPOS_CENTERED,
         SDL_WINDOWPOS_CENTERED,
         g_WindowWidth,

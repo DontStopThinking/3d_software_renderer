@@ -1,7 +1,14 @@
 #pragma once
 #include <SDL.h>
 
+#include <string_view>
+
 #include "common.h"
+
+// NOTE(sbalse): Colors
+constexpr u32 BLACK = 0xFF000000;
+constexpr u32 YELLOW = 0xFFFFFF00;
+constexpr u32 MAGENTA = 0xFFFF00FF;
 
 struct ColorBuffer
 {
@@ -17,7 +24,7 @@ extern constinit ColorBuffer g_ColorBuffer;
 extern constinit int g_WindowWidth;
 extern constinit int g_WindowHeight;
 
-bool InitializeWindow();
+bool InitializeWindow(const std::string_view windowTitle);
 void DrawGrid();
 void DrawPixel(int x, int y, u32 color);
 void DrawRectangle(int x, int y, int width, int height, u32 color);

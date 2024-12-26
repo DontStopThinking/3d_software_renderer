@@ -55,12 +55,12 @@ static void Render()
 {
     SDL_SetRenderDrawColor(g_Renderer, 0, 0, 0, 255);
     SDL_RenderClear(g_Renderer);
-    ClearColorBuffer(0xFF000000);
+    ClearColorBuffer(BLACK);
 
     DrawGrid();
 
-    DrawPixel(20, 20, 0xFFFFFF00);
-    DrawRectangle(100, 100, 300, 150, 0xFFFF00FF);
+    DrawPixel(20, 20, YELLOW);
+    DrawRectangle(100, 100, 300, 150, MAGENTA);
 
     RenderColorBuffer();
 
@@ -69,7 +69,7 @@ static void Render()
 
 int main(int argc, char* argv[])
 {
-    g_IsRunning = InitializeWindow();
+    g_IsRunning = InitializeWindow("3D Renderer");
 
     Setup();
 
