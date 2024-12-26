@@ -1,3 +1,3 @@
 #include "vector.h"
 
-// TODO(sbalse): Implement vector fuctions.
+// TODO(sbalse): Implement vector functions.

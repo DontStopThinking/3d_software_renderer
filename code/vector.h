@@ -13,4 +13,4 @@ struct Vec3
     float m_Z;
 };
 
-// TODO(sbalse): Declare vector fuctions.
+// TODO(sbalse): Declare vector functions.
