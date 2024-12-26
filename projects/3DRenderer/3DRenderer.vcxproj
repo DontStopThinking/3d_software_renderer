@@ -11,10 +11,12 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\code\display.cpp" />
     <ClCompile Include="..\..\code\main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\code\common.h" />
+    <ClInclude Include="..\..\code\display.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

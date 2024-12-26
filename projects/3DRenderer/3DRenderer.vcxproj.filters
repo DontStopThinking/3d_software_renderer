@@ -2,8 +2,10 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="..\..\code\main.cpp" />
+    <ClCompile Include="..\..\code\display.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\code\common.h" />
+    <ClInclude Include="..\..\code\display.h" />
   </ItemGroup>
 </Project>
