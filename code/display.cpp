@@ -84,6 +84,15 @@ void DrawGrid()
     }
 }
 
+void DrawPixel(int x, int y, u32 color)
+{
+    if (x < g_WindowWidth && y < g_WindowHeight)
+    {
+        int position = (g_WindowWidth * y) + x;
+        g_ColorBuffer.m_Buffer[position] = color;
+    }
+}
+
 void DrawRectangle(int x, int y, int width, int height, u32 color)
 {
     for (int yy = y; yy < height; yy++)

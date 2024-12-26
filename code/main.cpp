@@ -55,11 +55,11 @@ static void Render()
 {
     SDL_SetRenderDrawColor(g_Renderer, 0, 0, 0, 255);
     SDL_RenderClear(g_Renderer);
-
     ClearColorBuffer(0xFF000000);
 
     DrawGrid();
 
+    DrawPixel(20, 20, 0xFFFFFF00);
     DrawRectangle(100, 100, 300, 150, 0xFFFF00FF);
 
     RenderColorBuffer();

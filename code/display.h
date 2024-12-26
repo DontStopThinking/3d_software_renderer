@@ -19,6 +19,7 @@ extern constinit int g_WindowHeight;
 
 bool InitializeWindow();
 void DrawGrid();
+void DrawPixel(int x, int y, u32 color);
 void DrawRectangle(int x, int y, int width, int height, u32 color);
 void RenderColorBuffer();
 void ClearColorBuffer(u32 color);
