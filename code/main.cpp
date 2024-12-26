@@ -3,6 +3,7 @@
 #include <SDL.h>
 
 #include "common.h"
+#include "vector.h"
 #include "display.h"
 
 constinit bool g_IsRunning = false;
