@@ -99,7 +99,7 @@ static void Update()
         // NOTE(sbalse): Project the current point
         const Vec2 projectedPoint = Project(point);
 
-        // NOTE(sba;se): Save the projected 2D vector in the array of projected points.
+        // NOTE(sbalse): Save the projected 2D vector in the array of projected points.
         g_ProjectedPoints[i] = projectedPoint;
     }
 }
