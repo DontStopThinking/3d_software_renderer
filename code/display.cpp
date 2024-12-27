@@ -30,7 +30,7 @@ bool InitializeWindow(const std::string_view windowTitle)
         SDL_WINDOWPOS_CENTERED_DISPLAY(displayIndex),
         g_WindowWidth,
         g_WindowHeight,
-        0
+        SDL_WINDOW_RESIZABLE
     );
     if (!g_Window)
     {
