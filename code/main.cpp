@@ -63,10 +63,15 @@ static void ProcessInput()
 
         case SDL_KEYDOWN:
         {
-            // NOTE(sbalse): ESCAPE to quit
+            // NOTE(sbalse): ESCAPE to quit.
             if (event.key.keysym.sym == SDLK_ESCAPE)
             {
                 g_IsRunning = false;
+            }
+            // NOTE(sbalse): F9 to take a screenshot.
+            else if (event.key.keysym.sym == SDLK_F9)
+            {
+                TakeScreenshot(g_Renderer, "screenshot");
             }
         } break;
         }

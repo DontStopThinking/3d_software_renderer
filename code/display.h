@@ -34,6 +34,7 @@ void DrawRectangle(
     const int width,
     const int height,
     const u32 color);
+void TakeScreenshot(SDL_Renderer* renderer, const std::string_view fileNamePrefix);
 void RenderColorBuffer();
 void ClearColorBuffer(const u32 color);
 void DestroyWindow();

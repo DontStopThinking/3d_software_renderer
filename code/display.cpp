@@ -2,6 +2,7 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <chrono>
 
 constinit SDL_Window* g_Window = nullptr;
 constinit SDL_Renderer* g_Renderer = nullptr;
@@ -115,6 +116,42 @@ void DrawRectangle(
             DrawPixel(currentX, currentY, color);
         }
     }
+}
+
+void TakeScreenshot(SDL_Renderer* renderer, const std::string_view fileNamePrefix)
+{
+    std::fprintf(stdout, "INFO: Taking screenshot\n");
+
+    // NOTE(sbalse): Get current Unix timestamp.
+    using namespace std::chrono;
+    const i64 currentUnixTime = duration_cast<seconds>(system_clock::now().time_since_epoch()).count();
+
+    char fileNameWithTimestamp[128] = {};
+    sprintf_s(fileNameWithTimestamp, "%s-%lld.bmp", fileNamePrefix.data(), currentUnixTime);
+
+    int rendererWidth, rendererHeight;
+    SDL_GetRendererOutputSize(renderer, &rendererWidth, &rendererHeight);
+
+    SDL_Surface* screenshotSurface = SDL_CreateRGBSurface(
+        0,
+        rendererWidth,
+        rendererHeight,
+        32,
+        0x00FF0000,
+        0x0000FF00,
+        0x000000FF,
+        0xFF000000
+    );
+    SDL_RenderReadPixels(
+        renderer,
+        nullptr,
+        SDL_PIXELFORMAT_ARGB8888,
+        screenshotSurface->pixels,
+        screenshotSurface->pitch);
+    SDL_SaveBMP(screenshotSurface, fileNameWithTimestamp);
+    SDL_FreeSurface(screenshotSurface);
+
+    std::fprintf(stdout, "INFO: Saved screenshot %s\n", fileNameWithTimestamp);
 }
 
 void DestroyWindow()
