@@ -1,7 +1,7 @@
 #pragma once
-#include <SDL.h>
-
 #include <string_view>
+
+#include <SDL.h>
 
 #include "common.h"
 
@@ -9,6 +9,7 @@
 constexpr u32 BLACK = 0xFF000000;
 constexpr u32 YELLOW = 0xFFFFFF00;
 constexpr u32 MAGENTA = 0xFFFF00FF;
+constexpr u32 GRAY = 0xFF333333;
 
 struct ColorBuffer
 {
@@ -34,5 +35,5 @@ void DrawRectangle(
     const int height,
     const u32 color);
 void RenderColorBuffer();
-void ClearColorBuffer(u32 color);
+void ClearColorBuffer(const u32 color);
 void DestroyWindow();

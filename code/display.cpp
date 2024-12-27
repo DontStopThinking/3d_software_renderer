@@ -18,7 +18,7 @@ bool InitializeWindow(const std::string_view windowTitle)
     }
 
     // NOTE(sbalse): Create an SDL window.
-    SDL_Window* g_Window = SDL_CreateWindow(
+    g_Window = SDL_CreateWindow(
         windowTitle.data(),
         SDL_WINDOWPOS_CENTERED,
         SDL_WINDOWPOS_CENTERED,
@@ -58,7 +58,7 @@ void RenderColorBuffer()
 }
 
 // NOTE(sbalse): Clear our custom color buffer to the given color.
-void ClearColorBuffer(u32 color)
+void ClearColorBuffer(const u32 color)
 {
     for (int row = 0; row < g_WindowHeight; row++)
     {
@@ -78,13 +78,13 @@ void DrawGrid()
         {
             if (x % 10 == 0 || y % 10 == 0)
             {
-                g_ColorBuffer.m_Buffer[(g_WindowWidth * y) + x] = 0xFF333333;
+                g_ColorBuffer.m_Buffer[(g_WindowWidth * y) + x] = GRAY;
             }
         }
     }
 }
 
-void DrawPixel(int x, int y, u32 color)
+void DrawPixel(const int x, const int y, const u32 color)
 {
     if (x >= 0 && y >= 0 && x < g_WindowWidth && y < g_WindowHeight)
     {
