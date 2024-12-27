@@ -17,11 +17,17 @@ bool InitializeWindow(const std::string_view windowTitle)
         return false;
     }
 
+    // NOTE(sbalse): Get index of the monitor where the mouse pointer currently is. We will use it to
+    // make the window start on that monitor.
+    SDL_Point mousePos = {};
+    SDL_GetGlobalMouseState(&mousePos.x, &mousePos.y);
+    int displayIndex = SDL_GetPointDisplayIndex(&mousePos);
+
     // NOTE(sbalse): Create an SDL window.
     g_Window = SDL_CreateWindow(
         windowTitle.data(),
-        SDL_WINDOWPOS_CENTERED,
-        SDL_WINDOWPOS_CENTERED,
+        SDL_WINDOWPOS_CENTERED_DISPLAY(displayIndex),
+        SDL_WINDOWPOS_CENTERED_DISPLAY(displayIndex),
         g_WindowWidth,
         g_WindowHeight,
         0
