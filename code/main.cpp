@@ -14,7 +14,9 @@ constinit Vec3 g_CubePoints[NUM_POINTS] = {}; // NOTE(sbalse): A cube
 
 constinit Vec2 g_ProjectedPoints[NUM_POINTS] = {};
 
-constexpr int FOV_FACTOR = 128;
+constexpr Vec3 g_CameraPosition = { .m_X = 0, .m_Y = 0, .m_Z = -5 };
+
+constexpr int FOV_FACTOR = 640;
 
 static void Setup()
 {
@@ -76,8 +78,10 @@ static Vec2 Project(const Vec3 point)
 {
     const Vec2 projectedPoint =
     {
-        .m_X = point.m_X * FOV_FACTOR,
-        .m_Y = point.m_Y * FOV_FACTOR,
+        // NOTE(sbalse): Divide by Z, so the further away something is the smaller it appears.
+        // And conversely, the closer something is, the bigger it appears.
+        .m_X = (point.m_X * FOV_FACTOR) / point.m_Z,
+        .m_Y = (point.m_Y * FOV_FACTOR) / point.m_Z,
     };
 
     return projectedPoint;
@@ -87,7 +91,10 @@ static void Update()
 {
     for (int i = 0; i < NUM_POINTS; i++)
     {
-        const Vec3 point = g_CubePoints[i];
+        Vec3 point = g_CubePoints[i];
+
+        // NOTE(sbalse): Move the points away from the camera.
+        point.m_Z -= g_CameraPosition.m_Z;
 
         // NOTE(sbalse): Project the current point
         const Vec2 projectedPoint = Project(point);
