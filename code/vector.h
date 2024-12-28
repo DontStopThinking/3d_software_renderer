@@ -13,4 +13,6 @@ struct Vec3
     float m_Z;
 };
 
-// TODO(sbalse): Declare vector functions.
+Vec3 Vec3RotateX(const Vec3 value, const float angle);
+Vec3 Vec3RotateY(const Vec3 value, const float angle);
+Vec3 Vec3RotateZ(const Vec3 value, const float angle);

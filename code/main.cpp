@@ -14,7 +14,8 @@ constinit Vec3 g_CubePoints[NUM_POINTS] = {}; // NOTE(sbalse): A cube
 
 constinit Vec2 g_ProjectedPoints[NUM_POINTS] = {};
 
-constexpr Vec3 g_CameraPosition = { .m_X = 0, .m_Y = 0, .m_Z = -5 };
+constexpr Vec3 CAMERA_POSITION = { .m_X = 0, .m_Y = 0, .m_Z = -5 };
+constinit Vec3 g_CubeRotation = {};
 
 constexpr int FOV_FACTOR = 640;
 
@@ -94,15 +95,24 @@ static Vec2 Project(const Vec3 point)
 
 static void Update()
 {
+    g_CubeRotation.m_X += 0.001f;
+    g_CubeRotation.m_Y += 0.001f;
+    g_CubeRotation.m_Z += 0.001f;
+
     for (int i = 0; i < NUM_POINTS; i++)
     {
-        Vec3 point = g_CubePoints[i];
+        const Vec3 point = g_CubePoints[i];
+
+        // NOTE(sbalse): Rotate the cube along its X, Y and Z axes.
+        Vec3 transformedPoint = Vec3RotateX(point, g_CubeRotation.m_X);
+        transformedPoint = Vec3RotateY(transformedPoint, g_CubeRotation.m_Y);
+        transformedPoint = Vec3RotateZ(transformedPoint, g_CubeRotation.m_Z);
 
         // NOTE(sbalse): Move the points away from the camera.
-        point.m_Z -= g_CameraPosition.m_Z;
+        transformedPoint.m_Z -= CAMERA_POSITION.m_Z;
 
         // NOTE(sbalse): Project the current point
-        const Vec2 projectedPoint = Project(point);
+        const Vec2 projectedPoint = Project(transformedPoint);
 
         // NOTE(sbalse): Save the projected 2D vector in the array of projected points.
         g_ProjectedPoints[i] = projectedPoint;
