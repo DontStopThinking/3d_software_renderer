@@ -10,6 +10,12 @@ constexpr u32 YELLOW = 0xFFFFFF00;
 constexpr u32 MAGENTA = 0xFFFF00FF;
 constexpr u32 GRAY = 0xFF333333;
 
+// NOTE(sbalse): We will update and render these many frames in 1 second.
+constexpr u32 FPS = 30;
+// NOTE(sbalse): How many milliseconds each frame should take. Using 1000 as FPS is in seconds and this value
+// is in milliseconds.
+constexpr float FRAME_TARGET_TIME_MS = (1000.0f / FPS);
+
 struct ColorBuffer
 {
     u32* m_Buffer;

@@ -7,6 +7,7 @@
 #include "display.h"
 
 constinit bool g_IsRunning = false;
+constinit u32 g_PreviousFrameTimeMS = 0u; // NOTE(sbalse): Time taken by the previous frame in milliseconds.
 
 // NOTE(sbalse): Declare an array of vectors/points
 constexpr int NUM_POINTS = 9 * 9 * 9;
@@ -84,7 +85,7 @@ static Vec2 Project(const Vec3 point)
 {
     const Vec2 projectedPoint =
     {
-        // NOTE(sbalse): Divide by Z, so the further away something is the smaller it appears.
+        // NOTE(sbalse): Divide by Z, so the further away something is, the smaller it appears.
         // And conversely, the closer something is, the bigger it appears.
         .m_X = (point.m_X * FOV_FACTOR) / point.m_Z,
         .m_Y = (point.m_Y * FOV_FACTOR) / point.m_Z,
@@ -95,9 +96,19 @@ static Vec2 Project(const Vec3 point)
 
 static void Update()
 {
-    g_CubeRotation.m_X += 0.001f;
-    g_CubeRotation.m_Y += 0.001f;
-    g_CubeRotation.m_Z += 0.001f;
+    const u32 currentFrameTimeMS = SDL_GetTicks();
+    const u32 frameDuration = currentFrameTimeMS - g_PreviousFrameTimeMS;
+    g_PreviousFrameTimeMS = currentFrameTimeMS;
+
+    const int timeToWait = static_cast<int>(FRAME_TARGET_TIME_MS) - frameDuration;
+    if (timeToWait > 0 && timeToWait <= FRAME_TARGET_TIME_MS)
+    {
+        SDL_Delay(timeToWait);
+    }
+
+    g_CubeRotation.m_X += 0.01f;
+    g_CubeRotation.m_Y += 0.01f;
+    g_CubeRotation.m_Z += 0.01f;
 
     for (int i = 0; i < NUM_POINTS; i++)
     {
