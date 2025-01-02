@@ -190,7 +190,7 @@ static void Render()
 static void FreeResources()
 {
     std::free(g_ColorBuffer.m_Buffer);
-    g_ColorBuffer.m_Size = 0;
+    g_ColorBuffer = {};
     SDL_DestroyTexture(g_ColorBuffer.m_Texture);
 }
 

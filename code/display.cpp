@@ -192,9 +192,6 @@ void TakeScreenshot(SDL_Renderer* renderer, const std::string_view fileNamePrefi
 
 void DestroyWindow()
 {
-    std::free(g_ColorBuffer.m_Buffer);
-    g_ColorBuffer = {}; // NOTE(sbalse): Reset color buffer
-
     SDL_DestroyRenderer(g_Renderer);
     SDL_DestroyWindow(g_Window);
     SDL_Quit();
