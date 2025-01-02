@@ -1,5 +1,6 @@
 #include <cstdio>
 #include <cstdlib>
+#include <vector>
 #include <SDL.h>
 
 #include "common.h"
@@ -12,9 +13,8 @@ constinit u32 g_PreviousFrameTimeMS = 0u; // NOTE(sbalse): Time taken by the pre
 
 constexpr int FOV_FACTOR = 640;
 constexpr Vec3 CAMERA_POSITION = { .m_X = 0, .m_Y = 0, .m_Z = -5 };
-constinit Vec3 g_CubeRotation = {};
 
-constinit Triangle g_TrianglesToRender[NUM_MESH_FACES] = {};
+constinit std::vector<Triangle> g_TrianglesToRender;
 
 static void Setup()
 {
@@ -29,6 +29,9 @@ static void Setup()
         SDL_TEXTUREACCESS_STREAMING,
         g_WindowWidth,
         g_WindowHeight);
+
+    // NOTE(sbalse): Load the cube values in the mesh data structure.
+    LoadCubeMeshData();
 }
 
 static void ProcessInput()
@@ -87,20 +90,21 @@ static void Update()
         SDL_Delay(timeToWait);
     }
 
-    g_CubeRotation.m_X += 0.01f;
-    g_CubeRotation.m_Y += 0.01f;
-    g_CubeRotation.m_Z += 0.01f;
+    g_Mesh.m_Rotation.m_X += 0.01f;
+    g_Mesh.m_Rotation.m_Y += 0.01f;
+    g_Mesh.m_Rotation.m_Z += 0.01f;
 
-    // NOTE(sbalse): Loop all triangle faces of our cube mesh.
-    for (int faceIndex = 0; faceIndex < NUM_MESH_FACES; faceIndex++)
+    // NOTE(sbalse): Loop all triangle faces of our mesh.
+    for (const Face& meshFace : g_Mesh.m_Faces)
     {
-        const Face meshFace = MESH_FACES[faceIndex];
-
-        Vec3 faceVertices[3] = {};
-        // NOTE(sbalse): Need to subtract -1 from face since our faces are 1-indexed and C arrays are 0-indexed.
-        faceVertices[0] = MESH_VERTICES[meshFace.m_A - 1];
-        faceVertices[1] = MESH_VERTICES[meshFace.m_B - 1];
-        faceVertices[2] = MESH_VERTICES[meshFace.m_C - 1];
+        // NOTE(sbalse): The 3 vertices that make up a triangle of a face.
+        const Vec3 faceVertices[3] =
+        {
+            // NOTE(sbalse): Need to subtract -1 from face since our faces are 1-indexed and C arrays are 0-indexed.
+            CUBE_VERTICES[meshFace.m_A - 1],
+            CUBE_VERTICES[meshFace.m_B - 1],
+            CUBE_VERTICES[meshFace.m_C - 1]
+        };
 
         Triangle projectedTriangle = {};
 
@@ -109,10 +113,10 @@ static void Update()
         {
             Vec3 transformedVertex = faceVertices[vertexIndex];
 
-            // NOTE(sbalse): Rotate the cube along its X, Y and Z axes.
-            transformedVertex = Vec3RotateX(transformedVertex, g_CubeRotation.m_X);
-            transformedVertex = Vec3RotateY(transformedVertex, g_CubeRotation.m_Y);
-            transformedVertex = Vec3RotateZ(transformedVertex, g_CubeRotation.m_Z);
+            // NOTE(sbalse): Rotate the mesh along its X, Y and Z axes.
+            transformedVertex = Vec3RotateX(transformedVertex, g_Mesh.m_Rotation.m_X);
+            transformedVertex = Vec3RotateY(transformedVertex, g_Mesh.m_Rotation.m_Y);
+            transformedVertex = Vec3RotateZ(transformedVertex, g_Mesh.m_Rotation.m_Z);
 
             // NOTE(sbalse): Translate the vertex away from the camera.
             transformedVertex.m_Z -= CAMERA_POSITION.m_Z;
@@ -121,14 +125,15 @@ static void Update()
             Vec2 projectedPoint = Project(transformedVertex);
 
             // NOTE(sbalse): Scale and translate the projected point to the middle of the screen.
-            projectedPoint.m_X += g_WindowWidth / 2.0f;
-            projectedPoint.m_Y += g_WindowHeight / 2.0f;
+            projectedPoint.m_X += (g_WindowWidth / 2.0f);
+            projectedPoint.m_Y += (g_WindowHeight / 2.0f);
 
             projectedTriangle.m_Points[vertexIndex] = projectedPoint;
         }
 
         // NOTE(sbalse): Save the projected triangle in the array of triangles to render.
-        g_TrianglesToRender[faceIndex] = projectedTriangle;
+        // g_TrianglesToRender[faceIndex] = projectedTriangle;
+        g_TrianglesToRender.emplace_back(projectedTriangle);
     }
 }
 
@@ -139,10 +144,9 @@ static void Render()
     // DrawGrid();
 
     // NOTE(sbalse): Loop all projected triangles and render them.
-    for (int i = 0; i < NUM_MESH_FACES; i++)
+    for (const Triangle& currentTriangle : g_TrianglesToRender)
     {
-        const Triangle currentTriangle = g_TrianglesToRender[i];
-
+        // NOTE(sbalse): Draw the cube corner vertices.
         DrawRectangle(
             static_cast<int>(currentTriangle.m_Points[0].m_X),
             static_cast<int>(currentTriangle.m_Points[0].m_Y),
@@ -161,11 +165,32 @@ static void Render()
             3,
             3,
             YELLOW);
+
+        // NOTE(sbalse): Draw cube faces using triangles.
+        DrawTriangle(
+            static_cast<int>(currentTriangle.m_Points[0].m_X),
+            static_cast<int>(currentTriangle.m_Points[0].m_Y),
+            static_cast<int>(currentTriangle.m_Points[1].m_X),
+            static_cast<int>(currentTriangle.m_Points[1].m_Y),
+            static_cast<int>(currentTriangle.m_Points[2].m_X),
+            static_cast<int>(currentTriangle.m_Points[2].m_Y),
+            GREEN);
     }
+
+    // NOTE(sbalse): Clear the list of triangles to render every frame loop.
+    g_TrianglesToRender.clear();
 
     RenderColorBuffer();
 
     SDL_RenderPresent(g_Renderer);
+}
+
+// NOTE(sbalse): Free the memory that was dynamically allocated by the program.
+static void FreeResources()
+{
+    std::free(g_ColorBuffer.m_Buffer);
+    g_ColorBuffer.m_Size = 0;
+    SDL_DestroyTexture(g_ColorBuffer.m_Texture);
 }
 
 int main(int argc, char* argv[])
@@ -189,6 +214,7 @@ int main(int argc, char* argv[])
     }
 
     DestroyWindow();
+    FreeResources();
 
     return EXIT_SUCCESS;
 }

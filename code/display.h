@@ -1,5 +1,6 @@
 #pragma once
 #include <string_view>
+#include <span>
 #include <SDL.h>
 
 #include "common.h"
@@ -7,6 +8,9 @@
 // NOTE(sbalse): Colors
 constexpr u32 BLACK = 0xFF000000;
 constexpr u32 YELLOW = 0xFFFFFF00;
+constexpr u32 RED = 0xFFFF0000;
+constexpr u32 GREEN = 0xFF00FF00;
+constexpr u32 BLUE = 0xFF0000FF;
 constexpr u32 MAGENTA = 0xFFFF00FF;
 constexpr u32 GRAY = 0xFF333333;
 
@@ -39,6 +43,15 @@ void DrawRectangle(
     const int width,
     const int height,
     const u32 color);
+void DrawTriangle(
+    const int x0,
+    const int y0,
+    const int x1,
+    const int y1,
+    const int x2,
+    const int y2,
+    const u32 color);
+void DrawLine(const int x0, const int y0, const int x1, const int y1, const u32 color);
 void TakeScreenshot(SDL_Renderer* renderer, const std::string_view fileNamePrefix);
 void RenderColorBuffer();
 void ClearColorBuffer(const u32 color);

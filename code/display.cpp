@@ -118,6 +118,42 @@ void DrawRectangle(
     }
 }
 
+void DrawTriangle(
+    const int x0,
+    const int y0,
+    const int x1,
+    const int y1,
+    const int x2,
+    const int y2,
+    const u32 color)
+{
+    DrawLine(x0, y0, x1, y1, color);
+    DrawLine(x1, y1, x2, y2, color);
+    DrawLine(x2, y2, x0, y0, color);
+}
+
+void DrawLine(const int x0, const int y0, const int x1, const int y1, const u32 color)
+{
+    const int deltaX = x1 - x0;
+    const int deltaY = y1 - y0;
+
+    const int longestSideLength = std::max(std::abs(deltaX), std::abs(deltaY));
+
+    // NOTE(sbalse): Find how much we should increment in both X and Y each step.
+    const float xInc = deltaX / static_cast<float>(longestSideLength);
+    const float yInc = deltaY / static_cast<float>(longestSideLength);
+
+    float currentX = static_cast<float>(x0);
+    float currentY = static_cast<float>(y0);
+
+    for (int i = 0; i <= longestSideLength; i++)
+    {
+        DrawPixel(std::lround(currentX), std::lround(currentY), color);
+        currentX += xInc;
+        currentY += yInc;
+    }
+}
+
 void TakeScreenshot(SDL_Renderer* renderer, const std::string_view fileNamePrefix)
 {
     std::fprintf(stdout, "INFO: Taking screenshot\n");
