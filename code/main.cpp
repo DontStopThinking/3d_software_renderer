@@ -1,5 +1,6 @@
 #include <cstdio>
 #include <cstdlib>
+#include <string_view>
 #include <vector>
 #include <SDL.h>
 
@@ -195,7 +196,13 @@ static void FreeResources()
 
 int main(int argc, char* argv[])
 {
-    g_IsRunning = InitializeWindow("3D Renderer");
+#if _DEBUG
+    const std::string_view windowTitle = "3D Renderer [DEBUG]";
+#else
+    const std::string_view windowTitle = "3D Renderer [RELEASE]";
+#endif // _DEBUG
+
+    g_IsRunning = InitializeWindow(windowTitle);
 
     if (!g_IsRunning)
     {

@@ -1,6 +1,5 @@
 #pragma once
 #include <string_view>
-#include <span>
 #include <SDL.h>
 
 #include "common.h"
