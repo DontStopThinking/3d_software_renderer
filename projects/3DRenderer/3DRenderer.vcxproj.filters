@@ -4,10 +4,14 @@
     <ClCompile Include="..\..\code\main.cpp" />
     <ClCompile Include="..\..\code\display.cpp" />
     <ClCompile Include="..\..\code\vector.cpp" />
+    <ClCompile Include="..\..\code\mesh.cpp" />
+    <ClCompile Include="..\..\code\triangle.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\code\common.h" />
     <ClInclude Include="..\..\code\display.h" />
     <ClInclude Include="..\..\code\vector.h" />
+    <ClInclude Include="..\..\code\mesh.h" />
+    <ClInclude Include="..\..\code\triangle.h" />
   </ItemGroup>
 </Project>

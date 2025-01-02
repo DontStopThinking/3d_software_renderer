@@ -5,20 +5,16 @@
 #include "common.h"
 #include "vector.h"
 #include "display.h"
+#include "mesh.h"
 
 constinit bool g_IsRunning = false;
 constinit u32 g_PreviousFrameTimeMS = 0u; // NOTE(sbalse): Time taken by the previous frame in milliseconds.
 
-// NOTE(sbalse): Declare an array of vectors/points
-constexpr int NUM_POINTS = 9 * 9 * 9;
-constinit Vec3 g_CubePoints[NUM_POINTS] = {}; // NOTE(sbalse): A cube
-
-constinit Vec2 g_ProjectedPoints[NUM_POINTS] = {};
-
+constexpr int FOV_FACTOR = 640;
 constexpr Vec3 CAMERA_POSITION = { .m_X = 0, .m_Y = 0, .m_Z = -5 };
 constinit Vec3 g_CubeRotation = {};
 
-constexpr int FOV_FACTOR = 640;
+constinit Triangle g_TrianglesToRender[NUM_MESH_FACES] = {};
 
 static void Setup()
 {
@@ -33,21 +29,6 @@ static void Setup()
         SDL_TEXTUREACCESS_STREAMING,
         g_WindowWidth,
         g_WindowHeight);
-
-    int pointIndex = 0;
-    // NOTE(sbalse): Start loading our array of vectors. From -1 to 1.
-    for (float x = -1; x <= 1; x += 0.25) // NOTE(sbalse): Increment by 0.25 as 2 / 9 ~= 0.25
-    {
-        for (float y = -1; y <= 1; y += 0.25)
-        {
-            for (float z = -1; z <= 1; z += 0.25)
-            {
-                const Vec3 point = { .m_X = x, .m_Y = y, .m_Z = z };
-                g_CubePoints[pointIndex] = point;
-                ++pointIndex;
-            }
-        }
-    }
 }
 
 static void ProcessInput()
@@ -110,23 +91,44 @@ static void Update()
     g_CubeRotation.m_Y += 0.01f;
     g_CubeRotation.m_Z += 0.01f;
 
-    for (int i = 0; i < NUM_POINTS; i++)
+    // NOTE(sbalse): Loop all triangle faces of our cube mesh.
+    for (int faceIndex = 0; faceIndex < NUM_MESH_FACES; faceIndex++)
     {
-        const Vec3 point = g_CubePoints[i];
+        const Face meshFace = MESH_FACES[faceIndex];
 
-        // NOTE(sbalse): Rotate the cube along its X, Y and Z axes.
-        Vec3 transformedPoint = Vec3RotateX(point, g_CubeRotation.m_X);
-        transformedPoint = Vec3RotateY(transformedPoint, g_CubeRotation.m_Y);
-        transformedPoint = Vec3RotateZ(transformedPoint, g_CubeRotation.m_Z);
+        Vec3 faceVertices[3] = {};
+        // NOTE(sbalse): Need to subtract -1 from face since our faces are 1-indexed and C arrays are 0-indexed.
+        faceVertices[0] = MESH_VERTICES[meshFace.m_A - 1];
+        faceVertices[1] = MESH_VERTICES[meshFace.m_B - 1];
+        faceVertices[2] = MESH_VERTICES[meshFace.m_C - 1];
 
-        // NOTE(sbalse): Move the points away from the camera.
-        transformedPoint.m_Z -= CAMERA_POSITION.m_Z;
+        Triangle projectedTriangle = {};
 
-        // NOTE(sbalse): Project the current point
-        const Vec2 projectedPoint = Project(transformedPoint);
+        // NOTE(sbalse): Loop all three vertices of this current face and apply transformations
+        for (int vertexIndex = 0; vertexIndex < 3; vertexIndex++)
+        {
+            Vec3 transformedVertex = faceVertices[vertexIndex];
 
-        // NOTE(sbalse): Save the projected 2D vector in the array of projected points.
-        g_ProjectedPoints[i] = projectedPoint;
+            // NOTE(sbalse): Rotate the cube along its X, Y and Z axes.
+            transformedVertex = Vec3RotateX(transformedVertex, g_CubeRotation.m_X);
+            transformedVertex = Vec3RotateY(transformedVertex, g_CubeRotation.m_Y);
+            transformedVertex = Vec3RotateZ(transformedVertex, g_CubeRotation.m_Z);
+
+            // NOTE(sbalse): Translate the vertex away from the camera.
+            transformedVertex.m_Z -= CAMERA_POSITION.m_Z;
+
+            // NOTE(sbalse): Project the current vertex.
+            Vec2 projectedPoint = Project(transformedVertex);
+
+            // NOTE(sbalse): Scale and translate the projected point to the middle of the screen.
+            projectedPoint.m_X += g_WindowWidth / 2.0f;
+            projectedPoint.m_Y += g_WindowHeight / 2.0f;
+
+            projectedTriangle.m_Points[vertexIndex] = projectedPoint;
+        }
+
+        // NOTE(sbalse): Save the projected triangle in the array of triangles to render.
+        g_TrianglesToRender[faceIndex] = projectedTriangle;
     }
 }
 
@@ -134,17 +136,31 @@ static void Render()
 {
     ClearColorBuffer(BLACK);
 
-    //DrawGrid();
+    // DrawGrid();
 
-    // NOTE(sbalse): Loop all projected points and render them.
-    for (int i = 0; i < NUM_POINTS; i++)
+    // NOTE(sbalse): Loop all projected triangles and render them.
+    for (int i = 0; i < NUM_MESH_FACES; i++)
     {
-        const Vec2 projectedPoint = g_ProjectedPoints[i];
+        const Triangle currentTriangle = g_TrianglesToRender[i];
 
-        // NOTE(sbalse): Move the projected point to the center of our window.
-        const int translatedX = static_cast<int>(projectedPoint.m_X) + (g_WindowWidth / 2);
-        const int translatedY = static_cast<int>(projectedPoint.m_Y) + (g_WindowHeight / 2);
-        DrawRectangle(translatedX, translatedY, 4, 4, YELLOW);
+        DrawRectangle(
+            static_cast<int>(currentTriangle.m_Points[0].m_X),
+            static_cast<int>(currentTriangle.m_Points[0].m_Y),
+            3,
+            3,
+            YELLOW);
+        DrawRectangle(
+            static_cast<int>(currentTriangle.m_Points[1].m_X),
+            static_cast<int>(currentTriangle.m_Points[1].m_Y),
+            3,
+            3,
+            YELLOW);
+        DrawRectangle(
+            static_cast<int>(currentTriangle.m_Points[2].m_X),
+            static_cast<int>(currentTriangle.m_Points[2].m_Y),
+            3,
+            3,
+            YELLOW);
     }
 
     RenderColorBuffer();
