@@ -2,3 +2,4 @@ bin/
 .vs/
 tmp/
 *.user
+data/*.bmp

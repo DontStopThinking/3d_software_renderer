@@ -4,6 +4,8 @@
 #include <cstdlib>
 #include <chrono>
 
+#include "log.h"
+
 constinit SDL_Window* g_Window = nullptr;
 constinit SDL_Renderer* g_Renderer = nullptr;
 constinit ColorBuffer g_ColorBuffer = {};
@@ -14,12 +16,12 @@ bool InitializeWindow(const std::string_view windowTitle)
 {
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
     {
-        std::fprintf(stderr, "ERROR initializing SDL.\n");
+        LOG_ERROR("Failed to initialize SDL.");
         return false;
     }
 
-    // NOTE(sbalse): Get index of the monitor where the mouse pointer currently is. We will use it to
-    // make the window start on that monitor.
+    // NOTE(sbalse): Get index of the monitor where the mouse pointer currently is. We will use it
+    // to open our window on that monitor.
     SDL_Point mousePos = {};
     SDL_GetGlobalMouseState(&mousePos.x, &mousePos.y);
     int displayIndex = SDL_GetPointDisplayIndex(&mousePos);
@@ -35,7 +37,7 @@ bool InitializeWindow(const std::string_view windowTitle)
     );
     if (!g_Window)
     {
-        std::fprintf(stderr, "ERROR creating SDL window.\n");
+        LOG_ERROR("Failed to create an SDL window.");
         return false;
     }
 
@@ -43,7 +45,7 @@ bool InitializeWindow(const std::string_view windowTitle)
     g_Renderer = SDL_CreateRenderer(g_Window, -1, 0);
     if (!g_Renderer)
     {
-        fprintf(stderr, "ERROR creating SDL renderer.\n");
+        LOG_ERROR("Failed to create an SDL renderer.");
         return false;
     }
 
@@ -156,7 +158,7 @@ void DrawLine(const int x0, const int y0, const int x1, const int y1, const u32 
 
 void TakeScreenshot(SDL_Renderer* renderer, const std::string_view fileNamePrefix)
 {
-    std::fprintf(stdout, "INFO: Taking screenshot\n");
+    LOG_INFO("Taking screenshot...");
 
     // NOTE(sbalse): Get current Unix timestamp.
     using namespace std::chrono;
@@ -187,7 +189,7 @@ void TakeScreenshot(SDL_Renderer* renderer, const std::string_view fileNamePrefi
     SDL_SaveBMP(screenshotSurface, fileNameWithTimestamp);
     SDL_FreeSurface(screenshotSurface);
 
-    std::fprintf(stdout, "INFO: Saved screenshot %s\n", fileNameWithTimestamp);
+    LOG_INFO("Saved screenshot %s.", fileNameWithTimestamp);
 }
 
 void DestroyWindow()

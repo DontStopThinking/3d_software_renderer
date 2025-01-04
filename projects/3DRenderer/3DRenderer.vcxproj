@@ -20,6 +20,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\code\common.h" />
     <ClInclude Include="..\..\code\display.h" />
+    <ClInclude Include="..\..\code\log.h" />
     <ClInclude Include="..\..\code\mesh.h" />
     <ClInclude Include="..\..\code\triangle.h" />
     <ClInclude Include="..\..\code\vector.h" />
@@ -78,6 +79,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;_ITERATOR_DEBUG_LEVEL=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
+      <FloatingPointModel>Fast</FloatingPointModel>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -97,6 +99,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
+      <FloatingPointModel>Fast</FloatingPointModel>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

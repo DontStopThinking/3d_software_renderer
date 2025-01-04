@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <string_view>
 
 #include "common.h"
 #include "vector.h"
@@ -55,6 +56,7 @@ struct Mesh
     Vec3 m_Rotation; // NOTE(sbalse): Rotation of the mesh using Euler angles.
 };
 
-constinit Mesh g_Mesh = {};
+extern constinit Mesh g_Mesh;
 
 void LoadCubeMeshData();
+void LoadObjFileData(const std::string_view fileName);

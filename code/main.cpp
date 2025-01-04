@@ -32,7 +32,11 @@ static void Setup()
         g_WindowHeight);
 
     // NOTE(sbalse): Load the cube values in the mesh data structure.
-    LoadCubeMeshData();
+    // LoadCubeMeshData();
+
+    LoadObjFileData("assets/f22.obj");
+
+    g_TrianglesToRender.reserve(g_Mesh.m_Faces.size());
 }
 
 static void ProcessInput()
@@ -92,8 +96,8 @@ static void Update()
     }
 
     g_Mesh.m_Rotation.m_X += 0.01f;
-    g_Mesh.m_Rotation.m_Y += 0.01f;
-    g_Mesh.m_Rotation.m_Z += 0.01f;
+    // g_Mesh.m_Rotation.m_Y += 0.01f;
+    // g_Mesh.m_Rotation.m_Z += 0.01f;
 
     // NOTE(sbalse): Loop all triangle faces of our mesh.
     for (const Face& meshFace : g_Mesh.m_Faces)
@@ -102,9 +106,9 @@ static void Update()
         const Vec3 faceVertices[3] =
         {
             // NOTE(sbalse): Need to subtract -1 from face since our faces are 1-indexed and C arrays are 0-indexed.
-            CUBE_VERTICES[meshFace.m_A - 1],
-            CUBE_VERTICES[meshFace.m_B - 1],
-            CUBE_VERTICES[meshFace.m_C - 1]
+            g_Mesh.m_Vertices[meshFace.m_A - 1],
+            g_Mesh.m_Vertices[meshFace.m_B - 1],
+            g_Mesh.m_Vertices[meshFace.m_C - 1]
         };
 
         Triangle projectedTriangle = {};
