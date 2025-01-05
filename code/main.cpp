@@ -143,7 +143,8 @@ static void Update()
         // NOTE(sbalse): Get the face normal using cross-product.
         // NOTE(sbalse): We're using LEFT-HANDED co-ordinate system, so cross product should be
         // calculated using (AB, AC). In right-handed system, it would have been using (AC, AB);
-        const Vec3 normal = Vec3Cross(vectorAToB, vectorAToC);
+        Vec3 normal = Vec3Cross(vectorAToB, vectorAToC);
+        Vec3Normalize(&normal);
 
         // NOTE(sbalse): Find the vector between a point in the triangle and the camera origin.
         const Vec3 cameraRay = Vec3Sub(CAMERA_POSITION, vectorA);

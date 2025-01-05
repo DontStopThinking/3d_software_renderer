@@ -53,10 +53,16 @@ float Vec2Dot(const Vec2 v1, const Vec2 v2)
     return (v1.m_X * v2.m_X) + (v1.m_Y * v2.m_Y);
 }
 
+void Vec2Normalize(Vec2* const v)
+{
+    const float magnitude = Vec2Length(*v);
+    *v = Vec2Div(*v, magnitude);
+}
+
 /******** NOTE(sbalse): Implementation of vector 3D functions. ***********/
 float Vec3Length(const Vec3 value)
 {
-    return std::sqrtf(value.m_X * value.m_X + value.m_Y * value.m_Y + value.m_Z + value.m_Z);
+    return std::sqrtf(value.m_X * value.m_X + value.m_Y * value.m_Y + value.m_Z * value.m_Z);
 }
 
 Vec3 Vec3Add(const Vec3 v1, const Vec3 v2)
@@ -117,6 +123,12 @@ Vec3 Vec3Cross(const Vec3 v1, const Vec3 v2)
 float Vec3Dot(const Vec3 v1, const Vec3 v2)
 {
     return (v1.m_X * v2.m_X) + (v1.m_Y * v2.m_Y) + (v1.m_Z * v2.m_Z);
+}
+
+void Vec3Normalize(Vec3* const v)
+{
+    const float magnitude = Vec3Length(*v);
+    *v = Vec3Div(*v, magnitude);
 }
 
 Vec3 Vec3RotateX(const Vec3 value, const float angle)
