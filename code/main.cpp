@@ -137,8 +137,10 @@ static void Update()
         const Vec3 vectorB = transformedVertices[1]; /*  / \  */
         const Vec3 vectorC = transformedVertices[2]; /* C---B */
 
-        const Vec3 vectorAToB = Vec3Sub(vectorB, vectorA); // NOTE(sbalse): Get vector A to B.
-        const Vec3 vectorAToC = Vec3Sub(vectorC, vectorA); // NOTE(sbalse): Get vector A to C.
+        Vec3 vectorAToB = Vec3Sub(vectorB, vectorA); // NOTE(sbalse): Get vector A to B.
+        Vec3Normalize(&vectorAToB);
+        Vec3 vectorAToC = Vec3Sub(vectorC, vectorA); // NOTE(sbalse): Get vector A to C.
+        Vec3Normalize(&vectorAToC);
 
         // NOTE(sbalse): Get the face normal using cross-product.
         // NOTE(sbalse): We're using LEFT-HANDED co-ordinate system, so cross product should be
