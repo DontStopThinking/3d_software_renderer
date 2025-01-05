@@ -13,7 +13,7 @@ constinit bool g_IsRunning = false;
 constinit u32 g_PreviousFrameTimeMS = 0u; // NOTE(sbalse): Time taken by the previous frame in milliseconds.
 
 constexpr int FOV_FACTOR = 640;
-constexpr Vec3 CAMERA_POSITION = { .m_X = 0, .m_Y = 0, .m_Z = -5 };
+constexpr Vec3 CAMERA_POSITION = { .m_X = 0, .m_Y = 0, .m_Z = 0 };
 
 constinit std::vector<Triangle> g_TrianglesToRender;
 
@@ -105,15 +105,16 @@ static void Update()
         // NOTE(sbalse): The 3 vertices that make up a triangle of a face.
         const Vec3 faceVertices[3] =
         {
-            // NOTE(sbalse): Need to subtract -1 from face since our faces are 1-indexed and C arrays are 0-indexed.
+            // NOTE(sbalse): Need to subtract -1 from face since our faces are 1-indexed and C++
+            // arrays are 0-indexed.
             g_Mesh.m_Vertices[meshFace.m_A - 1],
             g_Mesh.m_Vertices[meshFace.m_B - 1],
             g_Mesh.m_Vertices[meshFace.m_C - 1]
         };
 
-        Triangle projectedTriangle = {};
+        Vec3 transformedVertices[3] = {};
 
-        // NOTE(sbalse): Loop all three vertices of this current face and apply transformations
+        // NOTE(sbalse): Transform vertices of the face.
         for (int vertexIndex = 0; vertexIndex < 3; vertexIndex++)
         {
             Vec3 transformedVertex = faceVertices[vertexIndex];
@@ -124,10 +125,46 @@ static void Update()
             transformedVertex = Vec3RotateZ(transformedVertex, g_Mesh.m_Rotation.m_Z);
 
             // NOTE(sbalse): Translate the vertex away from the camera.
-            transformedVertex.m_Z -= CAMERA_POSITION.m_Z;
+            transformedVertex.m_Z += 5;
 
+            // NOTE(sbalse): Save the transformed vertex.
+            transformedVertices[vertexIndex] = transformedVertex;
+        }
+
+        // NOTE(sbalse): Perform backface culling.
+        const Vec3 vectorA = transformedVertices[0]; /*   A   */
+        const Vec3 vectorB = transformedVertices[1]; /*  / \  */
+        const Vec3 vectorC = transformedVertices[2]; /* C---B */
+
+        const Vec3 vectorAToB = Vec3Sub(vectorB, vectorA); // NOTE(sbalse): Get vector A to B.
+        const Vec3 vectorAToC = Vec3Sub(vectorC, vectorA); // NOTE(sbalse): Get vector A to C.
+
+        // NOTE(sbalse): Get the face normal using cross-product.
+        // NOTE(sbalse): We're using LEFT-HANDED co-ordinate system, so cross product should be
+        // calculated using (AB, AC). In right-handed system, it would have been using (AC, AB);
+        const Vec3 normal = Vec3Cross(vectorAToB, vectorAToC);
+
+        // NOTE(sbalse): Find the vector between a point in the triangle and the camera origin.
+        const Vec3 cameraRay = Vec3Sub(CAMERA_POSITION, vectorA);
+
+        // NOTE(sbalse): Use dot product to calculate how aligned the face normal is with the camera
+        // ray.
+        const float cameraAlignmentWithFaceNormal = Vec3Dot(normal, cameraRay);
+
+        // NOTE(sbalse): If the normal is not visible to the camera then don't draw this face. AKA,
+        // cull this face.
+        if (cameraAlignmentWithFaceNormal < 0)
+        {
+            continue;
+        }
+
+        Triangle projectedTriangle = {};
+
+        // NOTE(sbalse): Project vertices of the face.
+        for (int vertexIndex = 0; vertexIndex < 3; vertexIndex++)
+        {
             // NOTE(sbalse): Project the current vertex.
-            Vec2 projectedPoint = Project(transformedVertex);
+            Vec2 projectedPoint = Project(transformedVertices[vertexIndex]);
 
             // NOTE(sbalse): Scale and translate the projected point to the middle of the screen.
             projectedPoint.m_X += (g_WindowWidth / 2.0f);
@@ -137,7 +174,6 @@ static void Update()
         }
 
         // NOTE(sbalse): Save the projected triangle in the array of triangles to render.
-        // g_TrianglesToRender[faceIndex] = projectedTriangle;
         g_TrianglesToRender.emplace_back(projectedTriangle);
     }
 }
