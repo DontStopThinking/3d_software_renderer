@@ -14,6 +14,8 @@ constinit int g_WindowHeight = 600;
 
 bool InitializeWindow(const std::string_view windowTitle)
 {
+    LOG_INFO("Initializing window...");
+
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
     {
         LOG_ERROR("Failed to initialize SDL.");
@@ -48,6 +50,8 @@ bool InitializeWindow(const std::string_view windowTitle)
         LOG_ERROR("Failed to create an SDL renderer.");
         return false;
     }
+
+    LOG_INFO("Successfully initialized window...");
 
     return true;
 }

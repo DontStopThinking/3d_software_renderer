@@ -28,9 +28,11 @@ void LoadObjFileData(const std::string_view fileName)
     std::FILE* file = nullptr;
     fopen_s(&file, fileName.data(), "r");
 
+    LOG_INFO("Loading obj file: %s...", fileName.data());
+
     if (!file)
     {
-        LOG_ERROR("Failed to open file: %s", fileName.data());
+        LOG_ERROR("Failed to open obj file: %s.", fileName.data());
         return;
     }
 
@@ -70,6 +72,8 @@ void LoadObjFileData(const std::string_view fileName)
             g_Mesh.m_Faces.emplace_back(face);
         }
     }
+
+    LOG_INFO("Successfully loaded obj file: %s.", fileName.data());
 
     std::fclose(file);
 }

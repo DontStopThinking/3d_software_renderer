@@ -4,6 +4,7 @@
 #include <vector>
 #include <SDL.h>
 
+#include "log.h"
 #include "common.h"
 #include "vector.h"
 #include "display.h"
@@ -182,7 +183,7 @@ static void Render()
 {
     ClearColorBuffer(BLACK);
 
-    // DrawGrid();
+    DrawGrid();
 
     // NOTE(sbalse): Loop all projected triangles and render them.
     for (const Triangle& currentTriangle : g_TrianglesToRender)
@@ -259,6 +260,8 @@ int main(int argc, char* argv[])
 
         Render();
     }
+
+    LOG_INFO("Shutting down...");
 
     DestroyWindow();
     FreeResources();
