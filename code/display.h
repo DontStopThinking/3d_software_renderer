@@ -3,17 +3,7 @@
 #include <SDL.h>
 
 #include "common.h"
-
-// NOTE(sbalse): Colors
-constexpr u32 BLACK = 0xFF000000;
-constexpr u32 WHITE = 0xFFFFFFFF;
-constexpr u32 RED = 0xFFFF0000;
-constexpr u32 GREEN = 0xFF00FF00;
-constexpr u32 BLUE = 0xFF0000FF;
-constexpr u32 YELLOW = 0xFFFFFF00;
-constexpr u32 MAGENTA = 0xFFFF00FF;
-constexpr u32 GRAY = 0xFF333333;
-constexpr u32 DARKGRAY = 0xFF555555;
+#include "colorlibrary.h"
 
 // NOTE(sbalse): We will update and render these many frames in 1 second.
 constexpr u32 FPS = 30;

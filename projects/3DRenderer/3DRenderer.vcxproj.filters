@@ -13,5 +13,7 @@
     <ClInclude Include="..\..\code\vector.h" />
     <ClInclude Include="..\..\code\mesh.h" />
     <ClInclude Include="..\..\code\triangle.h" />
+    <ClInclude Include="..\..\code\log.h" />
+    <ClInclude Include="..\..\code\colorlibrary.h" />
   </ItemGroup>
 </Project>

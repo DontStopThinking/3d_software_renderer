@@ -18,6 +18,8 @@ constexpr Vec3 CAMERA_POSITION = { .m_X = 0, .m_Y = 0, .m_Z = 0 };
 
 constinit std::vector<Triangle> g_TrianglesToRender;
 
+constinit bool g_Paused = false;
+
 static void Setup()
 {
     // NOTE(sbalse): Init the render mode and triangle culling method.
@@ -37,9 +39,9 @@ static void Setup()
         g_WindowHeight);
 
     // NOTE(sbalse): Load the cube values in the mesh data structure.
-    // LoadCubeMeshData();
+    LoadCubeMeshData();
 
-    LoadObjFileData("assets/cube.obj");
+    // LoadObjFileData("assets/cube.obj");
 
     g_TrianglesToRender.reserve(g_Mesh.m_Faces.size());
 }
@@ -68,6 +70,19 @@ static void ProcessInput()
             else if (event.key.keysym.sym == SDLK_F9)
             {
                 TakeScreenshot(g_Renderer, "screenshot");
+            }
+            // NOTE(sbalse): p to pause.
+            else if (event.key.keysym.sym == SDLK_p)
+            {
+                g_Paused = !g_Paused;
+                if (g_Paused)
+                {
+                    LOG_INFO("Paused: true.");
+                }
+                else
+                {
+                    LOG_INFO("Paused: false.");
+                }
             }
             // NOTE(sbalse): 1 to draw wireframe and vertices.
             else if (event.key.keysym.sym == SDLK_1)
@@ -130,9 +145,12 @@ static void Update()
         SDL_Delay(timeToWait);
     }
 
-    g_Mesh.m_Rotation.m_X += 0.01f;
-    g_Mesh.m_Rotation.m_Y += 0.01f;
-    g_Mesh.m_Rotation.m_Z += 0.01f;
+    if (!g_Paused)
+    {
+        g_Mesh.m_Rotation.m_X += 0.01f;
+        g_Mesh.m_Rotation.m_Y += 0.01f;
+        g_Mesh.m_Rotation.m_Z += 0.01f;
+    }
 
     // NOTE(sbalse): Loop all triangle faces of our mesh.
     for (const Face& meshFace : g_Mesh.m_Faces)
@@ -144,7 +162,7 @@ static void Update()
             // arrays are 0-indexed.
             g_Mesh.m_Vertices[meshFace.m_A - 1],
             g_Mesh.m_Vertices[meshFace.m_B - 1],
-            g_Mesh.m_Vertices[meshFace.m_C - 1]
+            g_Mesh.m_Vertices[meshFace.m_C - 1],
         };
 
         Vec3 transformedVertices[3] = {};
@@ -199,20 +217,29 @@ static void Update()
             }
         }
 
-        Triangle projectedTriangle = {};
+        Vec2 projectedPoints[3] = {};
 
         // NOTE(sbalse): Project vertices of the face.
         for (int vertexIndex = 0; vertexIndex < 3; vertexIndex++)
         {
             // NOTE(sbalse): Project the current vertex.
-            Vec2 projectedPoint = Project(transformedVertices[vertexIndex]);
+            projectedPoints[vertexIndex] = Project(transformedVertices[vertexIndex]);
 
             // NOTE(sbalse): Scale and translate the projected point to the middle of the screen.
-            projectedPoint.m_X += (g_WindowWidth / 2.0f);
-            projectedPoint.m_Y += (g_WindowHeight / 2.0f);
-
-            projectedTriangle.m_Points[vertexIndex] = projectedPoint;
+            projectedPoints[vertexIndex].m_X += (g_WindowWidth / 2.0f);
+            projectedPoints[vertexIndex].m_Y += (g_WindowHeight / 2.0f);
         }
+
+        const Triangle projectedTriangle =
+        {
+            .m_Points =
+            {
+                { projectedPoints[0].m_X, projectedPoints[0].m_Y },
+                { projectedPoints[1].m_X, projectedPoints[1].m_Y },
+                { projectedPoints[2].m_X, projectedPoints[2].m_Y },
+            },
+            .m_Color = meshFace.m_Color
+        };
 
         // NOTE(sbalse): Save the projected triangle in the array of triangles to render.
         g_TrianglesToRender.emplace_back(projectedTriangle);
@@ -239,7 +266,7 @@ static void Render()
                 static_cast<int>(currentTriangle.m_Points[1].m_Y),
                 static_cast<int>(currentTriangle.m_Points[2].m_X),
                 static_cast<int>(currentTriangle.m_Points[2].m_Y),
-                DARKGRAY);
+                currentTriangle.m_Color);
         }
 
         if (g_RenderMethod == RenderMethod::WireVertex)

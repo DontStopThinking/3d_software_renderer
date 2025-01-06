@@ -7,11 +7,13 @@ struct Face
     int m_A;
     int m_B;
     int m_C;
+    u32 m_Color;
 };
 
 struct Triangle
 {
     Vec2 m_Points[3];
+    u32 m_Color;
 };
 
 void DrawFilledTriangle(

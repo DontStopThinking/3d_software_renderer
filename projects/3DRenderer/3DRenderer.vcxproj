@@ -18,6 +18,7 @@
     <ClCompile Include="..\..\code\vector.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\code\colorlibrary.h" />
     <ClInclude Include="..\..\code\common.h" />
     <ClInclude Include="..\..\code\display.h" />
     <ClInclude Include="..\..\code\log.h" />
