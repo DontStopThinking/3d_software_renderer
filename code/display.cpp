@@ -9,8 +9,8 @@
 constinit SDL_Window* g_Window = nullptr;
 constinit SDL_Renderer* g_Renderer = nullptr;
 constinit ColorBuffer g_ColorBuffer = {};
-constinit int g_WindowWidth = 800;
-constinit int g_WindowHeight = 600;
+constinit int g_WindowWidth = 1024;
+constinit int g_WindowHeight = 720;
 
 bool InitializeWindow(const std::string_view windowTitle)
 {

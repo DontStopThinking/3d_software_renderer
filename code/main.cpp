@@ -35,7 +35,7 @@ static void Setup()
     // NOTE(sbalse): Load the cube values in the mesh data structure.
     // LoadCubeMeshData();
 
-    LoadObjFileData("assets/f22.obj");
+    LoadObjFileData("assets/cube.obj");
 
     g_TrianglesToRender.reserve(g_Mesh.m_Faces.size());
 }
@@ -97,8 +97,8 @@ static void Update()
     }
 
     g_Mesh.m_Rotation.m_X += 0.01f;
-    // g_Mesh.m_Rotation.m_Y += 0.01f;
-    // g_Mesh.m_Rotation.m_Z += 0.01f;
+    g_Mesh.m_Rotation.m_Y += 0.01f;
+    g_Mesh.m_Rotation.m_Z += 0.01f;
 
     // NOTE(sbalse): Loop all triangle faces of our mesh.
     for (const Face& meshFace : g_Mesh.m_Faces)
@@ -191,27 +191,17 @@ static void Render()
     // NOTE(sbalse): Loop all projected triangles and render them.
     for (const Triangle& currentTriangle : g_TrianglesToRender)
     {
-        // NOTE(sbalse): Draw the cube corner vertices.
-        DrawRectangle(
+        // NOTE(sbalse): Draw mesh face triangles.
+        DrawFilledTriangle(
             static_cast<int>(currentTriangle.m_Points[0].m_X),
             static_cast<int>(currentTriangle.m_Points[0].m_Y),
-            3,
-            3,
-            YELLOW);
-        DrawRectangle(
             static_cast<int>(currentTriangle.m_Points[1].m_X),
             static_cast<int>(currentTriangle.m_Points[1].m_Y),
-            3,
-            3,
-            YELLOW);
-        DrawRectangle(
             static_cast<int>(currentTriangle.m_Points[2].m_X),
             static_cast<int>(currentTriangle.m_Points[2].m_Y),
-            3,
-            3,
-            YELLOW);
+            WHITE);
 
-        // NOTE(sbalse): Draw cube faces using triangles.
+        // NOTE(sbalse): Draw mesh wireframe triangles.
         DrawTriangle(
             static_cast<int>(currentTriangle.m_Points[0].m_X),
             static_cast<int>(currentTriangle.m_Points[0].m_Y),
@@ -219,7 +209,7 @@ static void Render()
             static_cast<int>(currentTriangle.m_Points[1].m_Y),
             static_cast<int>(currentTriangle.m_Points[2].m_X),
             static_cast<int>(currentTriangle.m_Points[2].m_Y),
-            GREEN);
+            BLACK);
     }
 
     // NOTE(sbalse): Clear the list of triangles to render every frame loop.
