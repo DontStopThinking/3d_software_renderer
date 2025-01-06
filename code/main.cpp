@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <string_view>
 #include <vector>
+#include <algorithm>
 #include <SDL.h>
 
 #include "log.h"
@@ -230,6 +231,12 @@ static void Update()
             projectedPoints[vertexIndex].m_Y += (g_WindowHeight / 2.0f);
         }
 
+        // NOTE(sbalse): Calculate the average depth for each face based on the vertices after
+        // transformation.
+        const float avgDepth = (transformedVertices[0].m_Z
+                                + transformedVertices[1].m_Z
+                                + transformedVertices[2].m_Z) / 3.0f;
+
         const Triangle projectedTriangle =
         {
             .m_Points =
@@ -238,12 +245,20 @@ static void Update()
                 { projectedPoints[1].m_X, projectedPoints[1].m_Y },
                 { projectedPoints[2].m_X, projectedPoints[2].m_Y },
             },
-            .m_Color = meshFace.m_Color
+            .m_Color = meshFace.m_Color,
+            .m_AvgDepth = avgDepth,
         };
 
         // NOTE(sbalse): Save the projected triangle in the array of triangles to render.
         g_TrianglesToRender.emplace_back(projectedTriangle);
     }
+
+    // NOTE(sbalse): Sort the triangles by their avg depth. This is to ensure that the faces are
+    // rendered in the correct order of their depth.
+    std::sort(
+        std::begin(g_TrianglesToRender),
+        std::end(g_TrianglesToRender),
+        [](const Triangle& t1, const Triangle& t2) -> bool { return t1.m_AvgDepth < t2.m_AvgDepth; });
 }
 
 static void Render()

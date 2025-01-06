@@ -14,6 +14,7 @@ struct Triangle
 {
     Vec2 m_Points[3];
     u32 m_Color;
+    float m_AvgDepth; // NOTE(sbalse): Depth of the triangle, used to sort the face.
 };
 
 void DrawFilledTriangle(
