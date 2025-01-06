@@ -20,8 +20,12 @@ constinit std::vector<Triangle> g_TrianglesToRender;
 
 static void Setup()
 {
-    const size_t size = sizeof(u32) * g_WindowWidth * g_WindowHeight;
+    // NOTE(sbalse): Init the render mode and triangle culling method.
+    g_CullMethod = CullMethod::Backface;
+    g_RenderMethod = RenderMethod::FillTriangleWire;
+
     // NOTE(sbalse): Allocate the color buffer.
+    const size_t size = sizeof(u32) * g_WindowWidth * g_WindowHeight;
     g_ColorBuffer.m_Buffer = reinterpret_cast<u32*>(std::malloc(size));
     g_ColorBuffer.m_Size = size;
 
@@ -64,6 +68,36 @@ static void ProcessInput()
             else if (event.key.keysym.sym == SDLK_F9)
             {
                 TakeScreenshot(g_Renderer, "screenshot");
+            }
+            // NOTE(sbalse): 1 to draw wireframe and vertices.
+            else if (event.key.keysym.sym == SDLK_1)
+            {
+                g_RenderMethod = RenderMethod::WireVertex;
+            }
+            // NOTE(sbalse): 2 to display ONLY wireframe.
+            else if (event.key.keysym.sym == SDLK_2)
+            {
+                g_RenderMethod = RenderMethod::Wire;
+            }
+            // NOTE(sbalse): 3 to draw filled triangles.
+            else if (event.key.keysym.sym == SDLK_3)
+            {
+                g_RenderMethod = RenderMethod::FillTriangle;
+            }
+            // NOTE(sbalse): 4 to display both filled and wireframe.
+            else if (event.key.keysym.sym == SDLK_4)
+            {
+                g_RenderMethod = RenderMethod::FillTriangleWire;
+            }
+            // NOTE(sbalse): c to enable backface culling.
+            else if (event.key.keysym.sym == SDLK_c)
+            {
+                g_CullMethod = CullMethod::Backface;
+            }
+            // NOTE(sbalse): d to disable backface culling.
+            else if (event.key.keysym.sym == SDLK_d)
+            {
+                g_CullMethod = CullMethod::None;
             }
         } break;
         }
@@ -132,34 +166,37 @@ static void Update()
             transformedVertices[vertexIndex] = transformedVertex;
         }
 
-        // NOTE(sbalse): Perform backface culling.
-        const Vec3 vectorA = transformedVertices[0]; /*   A   */
-        const Vec3 vectorB = transformedVertices[1]; /*  / \  */
-        const Vec3 vectorC = transformedVertices[2]; /* C---B */
-
-        Vec3 vectorAToB = Vec3Sub(vectorB, vectorA); // NOTE(sbalse): Get vector A to B.
-        Vec3Normalize(&vectorAToB);
-        Vec3 vectorAToC = Vec3Sub(vectorC, vectorA); // NOTE(sbalse): Get vector A to C.
-        Vec3Normalize(&vectorAToC);
-
-        // NOTE(sbalse): Get the face normal using cross-product.
-        // NOTE(sbalse): We're using LEFT-HANDED co-ordinate system, so cross product should be
-        // calculated using (AB, AC). In right-handed system, it would have been using (AC, AB);
-        Vec3 normal = Vec3Cross(vectorAToB, vectorAToC);
-        Vec3Normalize(&normal);
-
-        // NOTE(sbalse): Find the vector between a point in the triangle and the camera origin.
-        const Vec3 cameraRay = Vec3Sub(CAMERA_POSITION, vectorA);
-
-        // NOTE(sbalse): Use dot product to calculate how aligned the face normal is with the camera
-        // ray.
-        const float cameraAlignmentWithFaceNormal = Vec3Dot(normal, cameraRay);
-
-        // NOTE(sbalse): If the normal is not visible to the camera then don't draw this face. AKA,
-        // cull this face.
-        if (cameraAlignmentWithFaceNormal < 0)
+        if (g_CullMethod == CullMethod::Backface)
         {
-            continue;
+            // NOTE(sbalse): Perform backface culling.
+            const Vec3 vectorA = transformedVertices[0]; /*   A   */
+            const Vec3 vectorB = transformedVertices[1]; /*  / \  */
+            const Vec3 vectorC = transformedVertices[2]; /* C---B */
+
+            Vec3 vectorAToB = Vec3Sub(vectorB, vectorA); // NOTE(sbalse): Get vector A to B.
+            Vec3Normalize(&vectorAToB);
+            Vec3 vectorAToC = Vec3Sub(vectorC, vectorA); // NOTE(sbalse): Get vector A to C.
+            Vec3Normalize(&vectorAToC);
+
+            // NOTE(sbalse): Get the face normal using cross-product.
+            // NOTE(sbalse): We're using LEFT-HANDED co-ordinate system, so cross product should be
+            // calculated using (AB, AC). In right-handed system, it would have been using (AC, AB);
+            Vec3 normal = Vec3Cross(vectorAToB, vectorAToC);
+            Vec3Normalize(&normal);
+
+            // NOTE(sbalse): Find the vector between a point in the triangle and the camera origin.
+            const Vec3 cameraRay = Vec3Sub(CAMERA_POSITION, vectorA);
+
+            // NOTE(sbalse): Use dot product to calculate how aligned the face normal is with the camera
+            // ray.
+            const float cameraAlignmentWithFaceNormal = Vec3Dot(normal, cameraRay);
+
+            // NOTE(sbalse): If the normal is not visible to the camera then don't draw this face. AKA,
+            // cull this face.
+            if (cameraAlignmentWithFaceNormal < 0)
+            {
+                continue;
+            }
         }
 
         Triangle projectedTriangle = {};
@@ -191,25 +228,57 @@ static void Render()
     // NOTE(sbalse): Loop all projected triangles and render them.
     for (const Triangle& currentTriangle : g_TrianglesToRender)
     {
-        // NOTE(sbalse): Draw mesh face triangles.
-        DrawFilledTriangle(
-            static_cast<int>(currentTriangle.m_Points[0].m_X),
-            static_cast<int>(currentTriangle.m_Points[0].m_Y),
-            static_cast<int>(currentTriangle.m_Points[1].m_X),
-            static_cast<int>(currentTriangle.m_Points[1].m_Y),
-            static_cast<int>(currentTriangle.m_Points[2].m_X),
-            static_cast<int>(currentTriangle.m_Points[2].m_Y),
-            WHITE);
+        if (g_RenderMethod == RenderMethod::FillTriangle
+            || g_RenderMethod == RenderMethod::FillTriangleWire)
+        {
+            // NOTE(sbalse): Draw mesh face triangles.
+            DrawFilledTriangle(
+                static_cast<int>(currentTriangle.m_Points[0].m_X),
+                static_cast<int>(currentTriangle.m_Points[0].m_Y),
+                static_cast<int>(currentTriangle.m_Points[1].m_X),
+                static_cast<int>(currentTriangle.m_Points[1].m_Y),
+                static_cast<int>(currentTriangle.m_Points[2].m_X),
+                static_cast<int>(currentTriangle.m_Points[2].m_Y),
+                DARKGRAY);
+        }
 
-        // NOTE(sbalse): Draw mesh wireframe triangles.
-        DrawTriangle(
-            static_cast<int>(currentTriangle.m_Points[0].m_X),
-            static_cast<int>(currentTriangle.m_Points[0].m_Y),
-            static_cast<int>(currentTriangle.m_Points[1].m_X),
-            static_cast<int>(currentTriangle.m_Points[1].m_Y),
-            static_cast<int>(currentTriangle.m_Points[2].m_X),
-            static_cast<int>(currentTriangle.m_Points[2].m_Y),
-            BLACK);
+        if (g_RenderMethod == RenderMethod::WireVertex)
+        {
+            // NOTE(sbalse): Draw the cube corner vertices.
+            DrawRectangle(
+                static_cast<int>(currentTriangle.m_Points[0].m_X - 3),
+                static_cast<int>(currentTriangle.m_Points[0].m_Y - 3),
+                6,
+                6,
+                RED);
+            DrawRectangle(
+                static_cast<int>(currentTriangle.m_Points[1].m_X - 3),
+                static_cast<int>(currentTriangle.m_Points[1].m_Y - 3),
+                6,
+                6,
+                RED);
+            DrawRectangle(
+                static_cast<int>(currentTriangle.m_Points[2].m_X - 3),
+                static_cast<int>(currentTriangle.m_Points[2].m_Y - 3),
+                6,
+                6,
+                RED);
+        }
+
+        if (g_RenderMethod == RenderMethod::Wire
+            || g_RenderMethod == RenderMethod::WireVertex
+            || g_RenderMethod == RenderMethod::FillTriangleWire)
+        {
+            // NOTE(sbalse): Draw mesh wireframe triangles.
+            DrawTriangle(
+                static_cast<int>(currentTriangle.m_Points[0].m_X),
+                static_cast<int>(currentTriangle.m_Points[0].m_Y),
+                static_cast<int>(currentTriangle.m_Points[1].m_X),
+                static_cast<int>(currentTriangle.m_Points[1].m_Y),
+                static_cast<int>(currentTriangle.m_Points[2].m_X),
+                static_cast<int>(currentTriangle.m_Points[2].m_Y),
+                WHITE);
+        }
     }
 
     // NOTE(sbalse): Clear the list of triangles to render every frame loop.
