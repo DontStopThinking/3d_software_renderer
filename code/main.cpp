@@ -20,6 +20,7 @@ constexpr Vec3 CAMERA_POSITION = { .m_X = 0, .m_Y = 0, .m_Z = 0 };
 constinit std::vector<Triangle> g_TrianglesToRender;
 
 constinit bool g_Paused = false;
+constinit bool g_PrintFPS = false;
 
 static void Setup()
 {
@@ -72,7 +73,7 @@ static void ProcessInput()
             {
                 TakeScreenshot(g_Renderer, "screenshot");
             }
-            // NOTE(sbalse): p to pause.
+            // NOTE(sbalse): p to pause mesh rotation.
             else if (event.key.keysym.sym == SDLK_p)
             {
                 g_Paused = !g_Paused;
@@ -83,6 +84,19 @@ static void ProcessInput()
                 else
                 {
                     LOG_INFO("Paused: false.");
+                }
+            }
+            // NOTE(sbalse): f to toggle printing of FPS.
+            else if (event.key.keysym.sym == SDLK_f)
+            {
+                g_PrintFPS = !g_PrintFPS;
+                if (g_PrintFPS)
+                {
+                    LOG_INFO("Printing FPS.");
+                }
+                else
+                {
+                    LOG_INFO("Stopping printing of FPS.");
                 }
             }
             // NOTE(sbalse): 1 to draw wireframe and vertices.
@@ -356,13 +370,34 @@ int main(int argc, char* argv[])
 
     Setup();
 
+    u32 prevTime = SDL_GetTicks();
+    u32 printTime = prevTime;
+    int numFrames = 0;
+
     while (g_IsRunning)
     {
+        const u32 currTime = SDL_GetTicks();
+
         ProcessInput();
 
         Update();
 
         Render();
+
+        // NOTE(sbalse): Print the FPS and average frame time.
+        if (g_PrintFPS)
+        {
+            numFrames += 1;
+            if (currTime - printTime >= 1000) // NOTE(sbalse): If at least 1 second has elapsed.
+            {
+                const int timeElapsed = currTime - printTime;
+                const int avgFrameTime = timeElapsed / numFrames;
+                LOG_INFO("fps: %3d, avg frame time: %3d ms", numFrames, avgFrameTime);
+                numFrames = 0;
+                printTime = currTime;
+            }
+            prevTime = currTime;
+        }
     }
 
     LOG_INFO("Shutting down...");
