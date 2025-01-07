@@ -3,3 +3,6 @@ bin/
 tmp/
 *.user
 data/*.bmp
+
+# Compile score VS extension files.
+projects/compileData.**
