@@ -169,19 +169,26 @@ static void Update()
 
     if (!g_Paused)
     {
-        g_Mesh.m_Rotation.m_X += 0.01f;
+        /*g_Mesh.m_Rotation.m_X += 0.01f;
         g_Mesh.m_Rotation.m_Y += 0.01f;
-        g_Mesh.m_Rotation.m_Z += 0.01f;
+        g_Mesh.m_Rotation.m_Z += 0.01f;*/
 
         g_Mesh.m_Scale.m_X += 0.002;
         g_Mesh.m_Scale.m_Y += 0.001;
+
+        g_Mesh.m_Translation.m_X += 0.01;
+        g_Mesh.m_Translation.m_Z = 5.0f;
     }
 
-    // NOTE(sbalse): Scale matrix used to scale our mesh.
+    // NOTE(sbalse): Scale and translation matrix used to scale/translate our mesh.
     const Mat4 scaleMatrix = Mat4MakeScale(
         g_Mesh.m_Scale.m_X,
         g_Mesh.m_Scale.m_Y,
         g_Mesh.m_Scale.m_Z);
+    const Mat4 translationMatrix = Mat4MakeTranslation(
+        g_Mesh.m_Translation.m_X,
+        g_Mesh.m_Translation.m_Y,
+        g_Mesh.m_Translation.m_Z);
 
     // NOTE(sbalse): Loop all triangle faces of our mesh.
     for (const Face& meshFace : g_Mesh.m_Faces)
@@ -203,8 +210,9 @@ static void Update()
         {
             Vec4 transformedVertex = Vec4FromVec3(faceVertices[vertexIndex]);
 
-            // TODO(sbalse): Use a matrix to scale our original vertex.
+            // NOTE(sbalse): Use a matrix to scale and translate our original vertex.
             transformedVertex = Mat4MulVec4(scaleMatrix, transformedVertex);
+            transformedVertex = Mat4MulVec4(translationMatrix, transformedVertex);
 
             // NOTE(sbalse): Translate the vertex away from the camera.
             transformedVertex.m_Z += 5;

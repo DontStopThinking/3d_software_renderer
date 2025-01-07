@@ -20,3 +20,4 @@ constexpr Mat4 MAT4_IDENTITY =
 
 Mat4 Mat4MakeScale(const float sx, const float sy, const float sz);
 Vec4 Mat4MulVec4(const Mat4 m, const Vec4 v);
+Mat4 Mat4MakeTranslation(const float tx, const float ty, const float tz);
