@@ -55,6 +55,8 @@ struct Mesh
     std::vector<Vec3> m_Vertices; // NOTE(sbalse): The mesh vertices.
     std::vector<Face> m_Faces; // NOTE(sbalse): The mesh faces.
     Vec3 m_Rotation; // NOTE(sbalse): Rotation of the mesh using Euler angles.
+    Vec3 m_Scale; // NOTE(sbalse): Scale with x, y and z values.
+    Vec3 m_Translation; // NOTE(sbalse): Translation with x, y and z values.
 };
 
 extern constinit Mesh g_Mesh;

@@ -8,6 +8,7 @@
 #include "log.h"
 #include "common.h"
 #include "vector.h"
+#include "matrix.h"
 #include "display.h"
 #include "mesh.h"
 
@@ -103,31 +104,37 @@ static void ProcessInput()
             else if (event.key.keysym.sym == SDLK_1)
             {
                 g_RenderMethod = RenderMethod::WireVertex;
+                LOG_INFO("Setting render method to \"WireVertex\".");
             }
             // NOTE(sbalse): 2 to display ONLY wireframe.
             else if (event.key.keysym.sym == SDLK_2)
             {
                 g_RenderMethod = RenderMethod::Wire;
+                LOG_INFO("Setting render method to \"Wire\".");
             }
             // NOTE(sbalse): 3 to draw filled triangles.
             else if (event.key.keysym.sym == SDLK_3)
             {
                 g_RenderMethod = RenderMethod::FillTriangle;
+                LOG_INFO("Setting render method to \"FillTriangle\".");
             }
             // NOTE(sbalse): 4 to display both filled and wireframe.
             else if (event.key.keysym.sym == SDLK_4)
             {
                 g_RenderMethod = RenderMethod::FillTriangleWire;
+                LOG_INFO("Setting render method to \"FillTriangleWire\".");
             }
             // NOTE(sbalse): c to enable backface culling.
             else if (event.key.keysym.sym == SDLK_c)
             {
                 g_CullMethod = CullMethod::Backface;
+                LOG_INFO("Setting cull method to \"Backface\".");
             }
             // NOTE(sbalse): d to disable backface culling.
             else if (event.key.keysym.sym == SDLK_d)
             {
                 g_CullMethod = CullMethod::None;
+                LOG_INFO("Setting render method to \"None\".");
             }
         } break;
         }
@@ -165,7 +172,16 @@ static void Update()
         g_Mesh.m_Rotation.m_X += 0.01f;
         g_Mesh.m_Rotation.m_Y += 0.01f;
         g_Mesh.m_Rotation.m_Z += 0.01f;
+
+        g_Mesh.m_Scale.m_X += 0.002;
+        g_Mesh.m_Scale.m_Y += 0.001;
     }
+
+    // NOTE(sbalse): Scale matrix used to scale our mesh.
+    const Mat4 scaleMatrix = Mat4MakeScale(
+        g_Mesh.m_Scale.m_X,
+        g_Mesh.m_Scale.m_Y,
+        g_Mesh.m_Scale.m_Z);
 
     // NOTE(sbalse): Loop all triangle faces of our mesh.
     for (const Face& meshFace : g_Mesh.m_Faces)
@@ -180,17 +196,15 @@ static void Update()
             g_Mesh.m_Vertices[meshFace.m_C - 1],
         };
 
-        Vec3 transformedVertices[3] = {};
+        Vec4 transformedVertices[3] = {};
 
         // NOTE(sbalse): Transform vertices of the face.
         for (int vertexIndex = 0; vertexIndex < 3; vertexIndex++)
         {
-            Vec3 transformedVertex = faceVertices[vertexIndex];
+            Vec4 transformedVertex = Vec4FromVec3(faceVertices[vertexIndex]);
 
-            // NOTE(sbalse): Rotate the mesh along its X, Y and Z axes.
-            transformedVertex = Vec3RotateX(transformedVertex, g_Mesh.m_Rotation.m_X);
-            transformedVertex = Vec3RotateY(transformedVertex, g_Mesh.m_Rotation.m_Y);
-            transformedVertex = Vec3RotateZ(transformedVertex, g_Mesh.m_Rotation.m_Z);
+            // TODO(sbalse): Use a matrix to scale our original vertex.
+            transformedVertex = Mat4MulVec4(scaleMatrix, transformedVertex);
 
             // NOTE(sbalse): Translate the vertex away from the camera.
             transformedVertex.m_Z += 5;
@@ -202,9 +216,9 @@ static void Update()
         if (g_CullMethod == CullMethod::Backface)
         {
             // NOTE(sbalse): Perform backface culling.
-            const Vec3 vectorA = transformedVertices[0]; /*   A   */
-            const Vec3 vectorB = transformedVertices[1]; /*  / \  */
-            const Vec3 vectorC = transformedVertices[2]; /* C---B */
+            const Vec3 vectorA = Vec3FromVec4(transformedVertices[0]); /*   A   */
+            const Vec3 vectorB = Vec3FromVec4(transformedVertices[1]); /*  / \  */
+            const Vec3 vectorC = Vec3FromVec4(transformedVertices[2]); /* C---B */
 
             Vec3 vectorAToB = Vec3Sub(vectorB, vectorA); // NOTE(sbalse): Get vector A to B.
             Vec3Normalize(&vectorAToB);
@@ -238,7 +252,7 @@ static void Update()
         for (int vertexIndex = 0; vertexIndex < 3; vertexIndex++)
         {
             // NOTE(sbalse): Project the current vertex.
-            projectedPoints[vertexIndex] = Project(transformedVertices[vertexIndex]);
+            projectedPoints[vertexIndex] = Project(Vec3FromVec4(transformedVertices[vertexIndex]));
 
             // NOTE(sbalse): Scale and translate the projected point to the middle of the screen.
             projectedPoints[vertexIndex].m_X += (g_WindowWidth / 2.0f);

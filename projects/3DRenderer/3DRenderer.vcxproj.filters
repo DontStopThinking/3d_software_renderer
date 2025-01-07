@@ -6,6 +6,7 @@
     <ClCompile Include="..\..\code\vector.cpp" />
     <ClCompile Include="..\..\code\mesh.cpp" />
     <ClCompile Include="..\..\code\triangle.cpp" />
+    <ClCompile Include="..\..\code\matrix.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\code\common.h" />
@@ -15,5 +16,6 @@
     <ClInclude Include="..\..\code\triangle.h" />
     <ClInclude Include="..\..\code\log.h" />
     <ClInclude Include="..\..\code\colorlibrary.h" />
+    <ClInclude Include="..\..\code\matrix.h" />
   </ItemGroup>
 </Project>

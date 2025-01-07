@@ -2,7 +2,7 @@
 
 #include <cmath>
 
-/******** NOTE(sbalse): Implementation of vector 2D functions. ***********/
+/******** NOTE(sbalse): Implementation of vector 2 functions. ***********/
 float Vec2Length(const Vec2 value)
 {
     return std::sqrtf(value.m_X * value.m_X + value.m_Y * value.m_Y);
@@ -59,7 +59,7 @@ void Vec2Normalize(Vec2* const v)
     *v = Vec2Div(*v, magnitude);
 }
 
-/******** NOTE(sbalse): Implementation of vector 3D functions. ***********/
+/******** NOTE(sbalse): Implementation of vector 3 functions. ***********/
 float Vec3Length(const Vec3 value)
 {
     return std::sqrtf(value.m_X * value.m_X + value.m_Y * value.m_Y + value.m_Z * value.m_Z);
@@ -162,6 +162,32 @@ Vec3 Vec3RotateZ(const Vec3 value, const float angle)
         .m_X = value.m_X * std::cosf(angle) - value.m_Y * std::sinf(angle),
         .m_Y = value.m_X * std::sinf(angle) + value.m_Y * std::cosf(angle),
         .m_Z = value.m_Z
+    };
+
+    return result;
+}
+
+/******** NOTE(sbalse): Implementation of vector conversion functions. ***********/
+Vec4 Vec4FromVec3(const Vec3 v)
+{
+    const Vec4 result =
+    {
+        .m_X = v.m_X,
+        .m_Y = v.m_Y,
+        .m_Z = v.m_Z,
+        .m_W = 1.0f,
+    };
+
+    return result;
+}
+
+Vec3 Vec3FromVec4(const Vec4 v)
+{
+    const Vec3 result =
+    {
+        .m_X = v.m_X,
+        .m_Y = v.m_Y,
+        .m_Z = v.m_Z,
     };
 
     return result;
