@@ -169,18 +169,22 @@ static void Update()
 
     if (!g_Paused)
     {
-        /*g_Mesh.m_Rotation.m_X += 0.01f;
+        g_Mesh.m_Rotation.m_X += 0.01f;
         g_Mesh.m_Rotation.m_Y += 0.01f;
-        g_Mesh.m_Rotation.m_Z += 0.01f;*/
+        g_Mesh.m_Rotation.m_Z += 0.01f;
 
         g_Mesh.m_Scale.m_X += 0.002;
-        g_Mesh.m_Scale.m_Y += 0.001;
+        g_Mesh.m_Scale.m_Y += 0.002;
+        g_Mesh.m_Scale.m_Y += 0.002;
 
         g_Mesh.m_Translation.m_X += 0.01;
+
+        // NOTE(sbalse): Move away from the camera.
         g_Mesh.m_Translation.m_Z = 5.0f;
     }
 
-    // NOTE(sbalse): Scale and translation matrix used to scale/translate our mesh.
+    // NOTE(sbalse): Create scale, translation, and rotation matrices that will be multiplied with
+    // our mesh vertices.
     const Mat4 scaleMatrix = Mat4MakeScale(
         g_Mesh.m_Scale.m_X,
         g_Mesh.m_Scale.m_Y,
@@ -189,6 +193,9 @@ static void Update()
         g_Mesh.m_Translation.m_X,
         g_Mesh.m_Translation.m_Y,
         g_Mesh.m_Translation.m_Z);
+    const Mat4 rotationMatrixX = Mat4MakeRotationX(g_Mesh.m_Rotation.m_X);
+    const Mat4 rotationMatrixY = Mat4MakeRotationY(g_Mesh.m_Rotation.m_Y);
+    const Mat4 rotationMatrixZ = Mat4MakeRotationZ(g_Mesh.m_Rotation.m_Z);
 
     // NOTE(sbalse): Loop all triangle faces of our mesh.
     for (const Face& meshFace : g_Mesh.m_Faces)
@@ -212,6 +219,9 @@ static void Update()
 
             // NOTE(sbalse): Use a matrix to scale and translate our original vertex.
             transformedVertex = Mat4MulVec4(scaleMatrix, transformedVertex);
+            transformedVertex = Mat4MulVec4(rotationMatrixX, transformedVertex);
+            transformedVertex = Mat4MulVec4(rotationMatrixY, transformedVertex);
+            transformedVertex = Mat4MulVec4(rotationMatrixZ, transformedVertex);
             transformedVertex = Mat4MulVec4(translationMatrix, transformedVertex);
 
             // NOTE(sbalse): Translate the vertex away from the camera.
