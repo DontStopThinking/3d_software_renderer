@@ -175,7 +175,7 @@ static void Update()
 
         g_Mesh.m_Scale.m_X += 0.002;
         g_Mesh.m_Scale.m_Y += 0.002;
-        g_Mesh.m_Scale.m_Y += 0.002;
+        g_Mesh.m_Scale.m_Z += 0.002;
 
         g_Mesh.m_Translation.m_X += 0.01;
 
