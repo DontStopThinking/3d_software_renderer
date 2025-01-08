@@ -155,6 +155,8 @@ static Vec2 Project(const Vec3 point)
     return projectedPoint;
 }
 
+static float speed = 0.02f;
+
 static void Update()
 {
     const u32 currentFrameTimeMS = SDL_GetTicks();
@@ -169,18 +171,25 @@ static void Update()
 
     if (!g_Paused)
     {
-        g_Mesh.m_Rotation.m_X += 0.01f;
+        /*g_Mesh.m_Rotation.m_X += 0.01f;
         g_Mesh.m_Rotation.m_Y += 0.01f;
         g_Mesh.m_Rotation.m_Z += 0.01f;
 
         g_Mesh.m_Scale.m_X += 0.002;
         g_Mesh.m_Scale.m_Y += 0.002;
-        g_Mesh.m_Scale.m_Z += 0.002;
+        g_Mesh.m_Scale.m_Z += 0.002;*/
 
-        g_Mesh.m_Translation.m_X += 0.01;
+        Vec3 pos = g_Mesh.m_Translation;
+        pos.m_X += speed;
+        if (pos.m_X >= 4.0f || pos.m_X <= -4.0f)
+        {
+            speed *= -1;
+        }
+
+        g_Mesh.m_Translation = pos;
 
         // NOTE(sbalse): Move away from the camera.
-        g_Mesh.m_Translation.m_Z = 5.0f;
+        g_Mesh.m_Translation.m_Z = 10.0f;
     }
 
     // NOTE(sbalse): Create scale, translation, and rotation matrices that will be multiplied with
@@ -224,13 +233,24 @@ static void Update()
         // NOTE(sbalse): Transform vertices of the face.
         for (int vertexIndex = 0; vertexIndex < 3; vertexIndex++)
         {
-            Vec4 transformedVertex = Vec4FromVec3(faceVertices[vertexIndex]);
+            // Vec4 transformedVertex = Vec4FromVec3(faceVertices[vertexIndex]);
+            Vec3 transformedVertex = faceVertices[vertexIndex];
 
             // NOTE(sbalse): Transform our vertex by multiplying it with our world matrix.
-            transformedVertex = Mat4MulVec4(worldMatrix, transformedVertex);
+            // transformedVertex = Mat4MulVec4(worldMatrix, transformedVertex);
+
+            const Mat3 translationMat = Mat3MakeTranslation(
+                transformedVertex.m_X,
+                transformedVertex.m_Y,
+                transformedVertex.m_Z,
+                g_Mesh.m_Translation.m_X,
+                g_Mesh.m_Translation.m_Y,
+                g_Mesh.m_Translation.m_Z
+            );
+            transformedVertex = Mat3MulVec3(translationMat, transformedVertex);
 
             // NOTE(sbalse): Save the transformed vertex.
-            transformedVertices[vertexIndex] = transformedVertex;
+            transformedVertices[vertexIndex] = Vec4FromVec3(transformedVertex);
         }
 
         // NOTE(sbalse): Do backface culling.

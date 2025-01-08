@@ -2,6 +2,8 @@
 
 #include <cmath>
 
+#include "log.h"
+
 Vec4 Mat4MulVec4(const Mat4 m, const Vec4 v)
 {
     Vec4 result = {};
@@ -128,5 +130,39 @@ Mat4 Mat4MakeRotationZ(const float angle)
     result.m_Values[0][1] = -s;
     result.m_Values[1][0] = s;
     result.m_Values[1][1] = c;
+    return result;
+}
+
+Mat3 Mat3MakeTranslation(
+    const float x,
+    const float y,
+    const float z,
+    const float tx,
+    const float ty,
+    const float tz)
+{
+    /*
+        | [(tx / x) + 1]     0                  0 |
+        |    0            [(ty / y) + 1]        0  |
+        |    0               0            [(tz / z) + 1] |
+    */
+    if (x == 0 || y == 0 || z == 0)
+    {
+        LOG_INFO("Zero! (x: %.2f, y: %.2f, z: %.2f)", x, y, z);
+    }
+
+    Mat3 result = MAT3_IDENTITY;
+    result.m_Values[0][0] = (tx / x) + 1;
+    result.m_Values[1][1] = (ty / y) + 1;
+    result.m_Values[2][2] = (tz / z) + 1;
+    return result;
+}
+
+Vec3 Mat3MulVec3(const Mat3 m, const Vec3 v)
+{
+    Vec3 result = {};
+    result.m_X = m.m_Values[0][0] * v.m_X + m.m_Values[0][1] * v.m_Y + m.m_Values[0][2] * v.m_Z;
+    result.m_Y = m.m_Values[1][0] * v.m_X + m.m_Values[1][1] * v.m_Y + m.m_Values[1][2] * v.m_Z;
+    result.m_Z = m.m_Values[2][0] * v.m_X + m.m_Values[2][1] * v.m_Y + m.m_Values[2][2] * v.m_Z;
     return result;
 }
