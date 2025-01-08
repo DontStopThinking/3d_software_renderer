@@ -31,3 +31,5 @@ Mat4 Mat4MakePerspective(const float fov, const float aspect, const float znear,
 // NOTE(sbalse): Multiply the projection matrix `matProj` with the Vector `v` and also perform
 // perspective divide on the result.
 Vec4 Mat4MulVec4Project(const Mat4 matProj, const Vec4 v);
+
+// TODO(sbalse): Orthographic projection.
