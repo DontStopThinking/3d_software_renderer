@@ -23,6 +23,8 @@ constinit std::vector<Triangle> g_TrianglesToRender;
 constinit bool g_Paused = false;
 constinit bool g_PrintFPS = false;
 
+constinit Mat4 g_ProjMatrix = {};
+
 static void Setup()
 {
     // NOTE(sbalse): Init the render mode and triangle culling method.
@@ -40,6 +42,13 @@ static void Setup()
         SDL_TEXTUREACCESS_STREAMING,
         g_WindowWidth,
         g_WindowHeight);
+
+    // NOTE(sbalse): Init the perspective projection matrix.
+    constexpr float fovRadians = M_PI / 3.0f; // NOTE(sbalse): Same as 180 / 3 or 60 deg.
+    const float aspect = static_cast<float>(g_WindowHeight) / g_WindowWidth;
+    constexpr float znear = 0.1f;
+    constexpr float zfar = 100.0f;
+    g_ProjMatrix = Mat4MakePerspective(fovRadians, aspect, znear, zfar);
 
     // NOTE(sbalse): Load the cube values in the mesh data structure.
     LoadCubeMeshData();
@@ -139,20 +148,6 @@ static void ProcessInput()
         } break;
         }
     }
-}
-
-// NOTE(sbalse): Take a 3D vector and return a 2D point.
-static Vec2 Project(const Vec3 point)
-{
-    const Vec2 projectedPoint =
-    {
-        // NOTE(sbalse): Divide by Z, so the further away something is, the smaller it appears.
-        // And conversely, the closer something is, the bigger it appears.
-        .m_X = (point.m_X * FOV_FACTOR) / point.m_Z,
-        .m_Y = (point.m_Y * FOV_FACTOR) / point.m_Z,
-    };
-
-    return projectedPoint;
 }
 
 static void Update()
@@ -266,15 +261,21 @@ static void Update()
             }
         }
 
-        Vec2 projectedPoints[3] = {};
+        Vec4 projectedPoints[3] = {};
 
         // NOTE(sbalse): Project vertices of the face.
         for (int vertexIndex = 0; vertexIndex < 3; vertexIndex++)
         {
             // NOTE(sbalse): Project the current vertex.
-            projectedPoints[vertexIndex] = Project(Vec3FromVec4(transformedVertices[vertexIndex]));
+            projectedPoints[vertexIndex] = Mat4MulVec4Project(
+                g_ProjMatrix,
+                transformedVertices[vertexIndex]);
 
-            // NOTE(sbalse): Scale and translate the projected point to the middle of the screen.
+            // NOTE(sbalse): Scale into the view.
+            projectedPoints[vertexIndex].m_X *= (g_WindowWidth / 2.0f);
+            projectedPoints[vertexIndex].m_Y *= (g_WindowHeight / 2.0f);
+
+            // NOTE(sbalse): Translate the projected point to the middle of the screen.
             projectedPoints[vertexIndex].m_X += (g_WindowWidth / 2.0f);
             projectedPoints[vertexIndex].m_Y += (g_WindowHeight / 2.0f);
         }

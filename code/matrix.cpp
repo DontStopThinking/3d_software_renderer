@@ -130,3 +130,36 @@ Mat4 Mat4MakeRotationZ(const float angle)
     result.m_Values[1][1] = c;
     return result;
 }
+
+Mat4 Mat4MakePerspective(const float fov, const float aspect, const float znear, const float zfar)
+{
+    /*
+        | (h/w)*1/tan(fov/2)             0           0                 0 |
+        |                  0  1/tan(fov/2)           0                 0 |
+        |                  0             0  zf/(zf-zn) (-zf*zn)/(zf-zn)) |
+        |                  0             0           1                 0 |
+    */
+    Mat4 result = {};
+    result.m_Values[0][0] = aspect * (1 / std::tanf(fov / 2));
+    result.m_Values[1][1] = 1 / std::tanf(fov / 2);
+    result.m_Values[2][2] = zfar / (zfar - znear);
+    result.m_Values[3][3] = (-zfar * znear) / (zfar - znear);
+    result.m_Values[3][2] = 1.0f;
+    return result;
+}
+
+Vec4 Mat4MulVec4Project(const Mat4 matProj, const Vec4 v)
+{
+    // NOTE(sbalse): Multiply the projection matrix by our original vector.
+    Vec4 result = Mat4MulVec4(matProj, v);
+
+    // NOTE(sbalse): Perform perspective divide with original z-value that is now stored in w.
+    if (result.m_W != 0.0f)
+    {
+        result.m_X /= result.m_W;
+        result.m_Y /= result.m_W;
+        result.m_Z /= result.m_W;
+    }
+
+    return result;
+}
