@@ -4,12 +4,13 @@ Writing a 3D software renderer to learn the basics of 3D graphics.
 
 Uses SDL for window and input management and for drawing pixels to a color buffer.
 
-## Compiling
+## Compiling and Running
 Following the following steps to build and run the project:
 1. Open `/projects/Pikuma3DGraphics.sln` in Visual Studio 2022.
-2. Right click on **3DRenderer** project and go to **Properties**.
-3. Go to **Debuggin0g** -> And set `Working Directory` to `$(SolutionDir)..\data\` for **All Configurations**.
+2. Right click on the **3DRenderer** project and go to **Properties**.
+3. Go to **Debugging** -> And set `Working Directory` to `$(SolutionDir)..\data\` for **All Configurations**.
 4. Click OK.
+5. Start debugging by clicking on the `Local Windows Debugger` green arrow. This will compile and run the project.
 
 ## Controls
 - `Escape` to quit.
