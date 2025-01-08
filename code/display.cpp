@@ -52,7 +52,7 @@ bool InitializeWindow(const std::string_view windowTitle)
         return false;
     }
 
-    LOG_INFO("Successfully initialized window...");
+    LOG_INFO("Successfully initialized window.");
 
     return true;
 }

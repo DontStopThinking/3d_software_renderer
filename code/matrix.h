@@ -18,7 +18,10 @@ constexpr Mat4 MAT4_IDENTITY =
     }
 };
 
+// TODO(sbalse): Use operator overloading for matrix math.
+
 Vec4 Mat4MulVec4(const Mat4 m, const Vec4 v);
+Mat4 Mat4MulMat4(const Mat4 m1, const Mat4 m2);
 Mat4 Mat4MakeScale(const float sx, const float sy, const float sz);
 Mat4 Mat4MakeTranslation(const float tx, const float ty, const float tz);
 Mat4 Mat4MakeRotationX(const float angle);

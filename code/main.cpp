@@ -197,7 +197,16 @@ static void Update()
     const Mat4 rotationMatrixY = Mat4MakeRotationY(g_Mesh.m_Rotation.m_Y);
     const Mat4 rotationMatrixZ = Mat4MakeRotationZ(g_Mesh.m_Rotation.m_Z);
 
-    // NOTE(sbalse): Loop all triangle faces of our mesh.
+    // NOTE(sbalse): Create a "World Matrix" combining scale, rotation and translation
+    // matrices of the mesh.
+    Mat4 worldMatrix = MAT4_IDENTITY;
+    worldMatrix = Mat4MulMat4(scaleMatrix, worldMatrix);
+    worldMatrix = Mat4MulMat4(rotationMatrixX, worldMatrix);
+    worldMatrix = Mat4MulMat4(rotationMatrixY, worldMatrix);
+    worldMatrix = Mat4MulMat4(rotationMatrixZ, worldMatrix);
+    worldMatrix = Mat4MulMat4(translationMatrix, worldMatrix);
+
+    // NOTE(sbalse): Loop all faces of our mesh.
     for (const Face& meshFace : g_Mesh.m_Faces)
     {
         // NOTE(sbalse): The 3 vertices that make up a triangle of a face.
@@ -217,23 +226,16 @@ static void Update()
         {
             Vec4 transformedVertex = Vec4FromVec3(faceVertices[vertexIndex]);
 
-            // NOTE(sbalse): Use a matrix to scale and translate our original vertex.
-            transformedVertex = Mat4MulVec4(scaleMatrix, transformedVertex);
-            transformedVertex = Mat4MulVec4(rotationMatrixX, transformedVertex);
-            transformedVertex = Mat4MulVec4(rotationMatrixY, transformedVertex);
-            transformedVertex = Mat4MulVec4(rotationMatrixZ, transformedVertex);
-            transformedVertex = Mat4MulVec4(translationMatrix, transformedVertex);
-
-            // NOTE(sbalse): Translate the vertex away from the camera.
-            transformedVertex.m_Z += 5;
+            // NOTE(sbalse): Transform our vertex by multiplying it with our world matrix.
+            transformedVertex = Mat4MulVec4(worldMatrix, transformedVertex);
 
             // NOTE(sbalse): Save the transformed vertex.
             transformedVertices[vertexIndex] = transformedVertex;
         }
 
+        // NOTE(sbalse): Do backface culling.
         if (g_CullMethod == CullMethod::Backface)
         {
-            // NOTE(sbalse): Perform backface culling.
             const Vec3 vectorA = Vec3FromVec4(transformedVertices[0]); /*   A   */
             const Vec3 vectorB = Vec3FromVec4(transformedVertices[1]); /*  / \  */
             const Vec3 vectorC = Vec3FromVec4(transformedVertices[2]); /* C---B */

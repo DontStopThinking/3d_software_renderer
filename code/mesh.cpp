@@ -13,6 +13,8 @@ extern constinit Mesh g_Mesh =
 
 void LoadCubeMeshData()
 {
+    LOG_INFO("Creating cube mesh...");
+
     for (int i = 0; i < NUM_CUBE_VERTICES; i++)
     {
         const Vec3 cubeVertex = CUBE_VERTICES[i];
@@ -24,6 +26,8 @@ void LoadCubeMeshData()
         const Face cubeFace = CUBE_FACES[i];
         g_Mesh.m_Faces.emplace_back(cubeFace);
     }
+
+    LOG_INFO("Successfully created cube mesh.");
 }
 
 void LoadObjFileData(const std::string_view fileName)

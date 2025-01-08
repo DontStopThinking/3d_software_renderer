@@ -30,6 +30,23 @@ Vec4 Mat4MulVec4(const Mat4 m, const Vec4 v)
     return result;
 }
 
+Mat4 Mat4MulMat4(const Mat4 m1, const Mat4 m2)
+{
+    Mat4 result = {};
+    for (int i = 0; i < 4; i++)
+    {
+        for (int j = 0; j < 4; j++)
+        {
+            result.m_Values[i][j] =
+                m1.m_Values[i][0] * m2.m_Values[0][j]
+                + m1.m_Values[i][1] * m2.m_Values[1][j]
+                + m1.m_Values[i][2] * m2.m_Values[2][j]
+                + m1.m_Values[i][3] * m2.m_Values[3][j];
+        }
+    }
+    return result;
+}
+
 Mat4 Mat4MakeScale(const float sx, const float sy, const float sz)
 {
     /*
