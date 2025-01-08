@@ -12,6 +12,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\code\display.cpp" />
+    <ClCompile Include="..\..\code\light.cpp" />
     <ClCompile Include="..\..\code\main.cpp" />
     <ClCompile Include="..\..\code\matrix.cpp" />
     <ClCompile Include="..\..\code\mesh.cpp" />
@@ -22,6 +23,7 @@
     <ClInclude Include="..\..\code\colorlibrary.h" />
     <ClInclude Include="..\..\code\common.h" />
     <ClInclude Include="..\..\code\display.h" />
+    <ClInclude Include="..\..\code\light.h" />
     <ClInclude Include="..\..\code\log.h" />
     <ClInclude Include="..\..\code\matrix.h" />
     <ClInclude Include="..\..\code\mesh.h" />

@@ -74,6 +74,7 @@ void LoadObjFileData(const std::string_view fileName)
                 .m_A = vertexIndices[0],
                 .m_B = vertexIndices[1],
                 .m_C = vertexIndices[2],
+                .m_Color = WHITE,
             };
 
             g_Mesh.m_Faces.emplace_back(face);

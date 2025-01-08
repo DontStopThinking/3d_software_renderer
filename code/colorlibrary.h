@@ -4,6 +4,10 @@
 // a set of 139 'standard' colors in uint32_t (ARGB888) format
 // source: https://www.rapidtables.com/web/color/RGB_Color.html
 
+constexpr u32 ALPHA_MASK = 0xFF000000;
+constexpr u32 RED_MASK = 0x00FF0000;
+constexpr u32 GREEN_MASK = 0x0000FF00;
+constexpr u32 BLUE_MASK = 0x000000FF;
 constexpr u32 MAROON = 0xFF800000;
 constexpr u32 DARK_RED = 0xFF8B0000;
 constexpr u32 BROWN = 0xFFA52A2A;

@@ -11,6 +11,7 @@
 #include "matrix.h"
 #include "display.h"
 #include "mesh.h"
+#include "light.h"
 
 constinit bool g_IsRunning = false;
 constinit u32 g_PreviousFrameTimeMS = 0u; // NOTE(sbalse): Time taken by the previous frame in milliseconds.
@@ -53,7 +54,7 @@ static void Setup()
     // NOTE(sbalse): Load the cube values in the mesh data structure.
     LoadCubeMeshData();
 
-    // LoadObjFileData("assets/cube.obj");
+    // LoadObjFileData("assets/f22.obj");
 
     g_TrianglesToRender.reserve(g_Mesh.m_Faces.size());
 }
@@ -164,8 +165,8 @@ static void Update()
 
     if (!g_Paused)
     {
-        // g_Mesh.m_Rotation.m_X += 0.01f;
-        g_Mesh.m_Rotation.m_Y += 0.01f;
+        g_Mesh.m_Rotation.m_X += 0.01f;
+        // g_Mesh.m_Rotation.m_Y += 0.01f;
         // g_Mesh.m_Rotation.m_Z += 0.01f;
 
         // g_Mesh.m_Scale.m_X += 0.002;
@@ -228,31 +229,31 @@ static void Update()
             transformedVertices[vertexIndex] = transformedVertex;
         }
 
+        const Vec3 vectorA = Vec3FromVec4(transformedVertices[0]); /*   A   */
+        const Vec3 vectorB = Vec3FromVec4(transformedVertices[1]); /*  / \  */
+        const Vec3 vectorC = Vec3FromVec4(transformedVertices[2]); /* C---B */
+
+        Vec3 vectorAToB = Vec3Sub(vectorB, vectorA); // NOTE(sbalse): Get vector A to B.
+        Vec3Normalize(&vectorAToB);
+        Vec3 vectorAToC = Vec3Sub(vectorC, vectorA); // NOTE(sbalse): Get vector A to C.
+        Vec3Normalize(&vectorAToC);
+
+        // NOTE(sbalse): Get the face normal using cross-product.
+        // NOTE(sbalse): We're using LEFT-HANDED co-ordinate system, so cross product should be
+        // calculated using (AB, AC). In right-handed system, it would have been using (AC, AB);
+        Vec3 normal = Vec3Cross(vectorAToB, vectorAToC);
+        Vec3Normalize(&normal);
+
+        // NOTE(sbalse): Find the vector between a point in the triangle and the camera origin.
+        const Vec3 cameraRay = Vec3Sub(CAMERA_POSITION, vectorA);
+
+        // NOTE(sbalse): Use dot product to calculate how aligned the face normal is with the camera
+        // ray.
+        const float cameraAlignmentWithFaceNormal = Vec3Dot(normal, cameraRay);
+
         // NOTE(sbalse): Do backface culling.
         if (g_CullMethod == CullMethod::Backface)
         {
-            const Vec3 vectorA = Vec3FromVec4(transformedVertices[0]); /*   A   */
-            const Vec3 vectorB = Vec3FromVec4(transformedVertices[1]); /*  / \  */
-            const Vec3 vectorC = Vec3FromVec4(transformedVertices[2]); /* C---B */
-
-            Vec3 vectorAToB = Vec3Sub(vectorB, vectorA); // NOTE(sbalse): Get vector A to B.
-            Vec3Normalize(&vectorAToB);
-            Vec3 vectorAToC = Vec3Sub(vectorC, vectorA); // NOTE(sbalse): Get vector A to C.
-            Vec3Normalize(&vectorAToC);
-
-            // NOTE(sbalse): Get the face normal using cross-product.
-            // NOTE(sbalse): We're using LEFT-HANDED co-ordinate system, so cross product should be
-            // calculated using (AB, AC). In right-handed system, it would have been using (AC, AB);
-            Vec3 normal = Vec3Cross(vectorAToB, vectorAToC);
-            Vec3Normalize(&normal);
-
-            // NOTE(sbalse): Find the vector between a point in the triangle and the camera origin.
-            const Vec3 cameraRay = Vec3Sub(CAMERA_POSITION, vectorA);
-
-            // NOTE(sbalse): Use dot product to calculate how aligned the face normal is with the camera
-            // ray.
-            const float cameraAlignmentWithFaceNormal = Vec3Dot(normal, cameraRay);
-
             // NOTE(sbalse): If the normal is not visible to the camera then don't draw this face. AKA,
             // cull this face.
             if (cameraAlignmentWithFaceNormal < 0)
@@ -286,6 +287,13 @@ static void Update()
                                 + transformedVertices[1].m_Z
                                 + transformedVertices[2].m_Z) / 3.0f;
 
+        // NOTE(sbalse): Calculate the shade intensity based on how aligned is the face normal and
+        // the inverse of the light ray.
+        const float lightIntensityFactor = -Vec3Dot(normal, g_Light.m_Direction);
+
+        // NOTE(sbalse): Calculate triangle color based on the light angle.
+        const u32 triangleColor = LightApplyIntensity(meshFace.m_Color, lightIntensityFactor);
+
         const Triangle projectedTriangle =
         {
             .m_Points =
@@ -294,7 +302,7 @@ static void Update()
                 { projectedPoints[1].m_X, projectedPoints[1].m_Y },
                 { projectedPoints[2].m_X, projectedPoints[2].m_Y },
             },
-            .m_Color = meshFace.m_Color,
+            .m_Color = triangleColor,
             .m_AvgDepth = avgDepth,
         };
 
