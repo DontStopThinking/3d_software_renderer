@@ -164,15 +164,15 @@ static void Update()
 
     if (!g_Paused)
     {
-        g_Mesh.m_Rotation.m_X += 0.01f;
+        // g_Mesh.m_Rotation.m_X += 0.01f;
         g_Mesh.m_Rotation.m_Y += 0.01f;
-        g_Mesh.m_Rotation.m_Z += 0.01f;
+        // g_Mesh.m_Rotation.m_Z += 0.01f;
 
-        g_Mesh.m_Scale.m_X += 0.002;
-        g_Mesh.m_Scale.m_Y += 0.002;
-        g_Mesh.m_Scale.m_Z += 0.002;
+        // g_Mesh.m_Scale.m_X += 0.002;
+        // g_Mesh.m_Scale.m_Y += 0.002;
+        // g_Mesh.m_Scale.m_Z += 0.002;
 
-        g_Mesh.m_Translation.m_X += 0.01;
+        // g_Mesh.m_Translation.m_X += 0.01;
 
         // NOTE(sbalse): Move away from the camera.
         g_Mesh.m_Translation.m_Z = 5.0f;
