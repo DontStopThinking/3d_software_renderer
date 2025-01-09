@@ -28,9 +28,10 @@ constinit Mat4 g_ProjMatrix = {};
 
 static void Setup()
 {
-    // NOTE(sbalse): Init the render mode and triangle culling method.
+    // NOTE(sbalse): Init the render mode, triangle culling method and shading method.
     g_CullMethod = CullMethod::Backface;
-    g_RenderMethod = RenderMethod::FillTriangleWire;
+    g_RenderMethod = RenderMethod::FillTriangle;
+    g_ShadingMethod = ShadingMethod::FlatShading;
 
     // NOTE(sbalse): Allocate the color buffer.
     const size_t size = sizeof(u32) * g_WindowWidth * g_WindowHeight;
@@ -133,6 +134,16 @@ static void ProcessInput()
             {
                 g_RenderMethod = RenderMethod::FillTriangleWire;
                 LOG_INFO("Set render method to \"FillTriangleWire\".");
+            }
+            else if (event.key.keysym.sym == SDLK_5)
+            {
+                g_ShadingMethod = ShadingMethod::FlatShading;
+                LOG_INFO("Set shading method to \"FlatShading\".");
+            }
+            else if (event.key.keysym.sym == SDLK_6)
+            {
+                g_ShadingMethod = ShadingMethod::None;
+                LOG_INFO("Set shading method to \"None\".");
             }
             // NOTE(sbalse): c to enable backface culling.
             else if (event.key.keysym.sym == SDLK_c)
@@ -290,12 +301,17 @@ static void Update()
                                 + transformedVertices[1].m_Z
                                 + transformedVertices[2].m_Z) / 3.0f;
 
-        // NOTE(sbalse): Calculate the shade intensity based on how aligned is the face normal and
-        // the inverse of the light ray.
-        const float lightIntensityFactor = -Vec3Dot(normal, g_Light.m_Direction);
+        u32 triangleColor = meshFace.m_Color;
 
-        // NOTE(sbalse): Calculate triangle color based on the light angle.
-        const u32 triangleColor = LightApplyIntensity(meshFace.m_Color, lightIntensityFactor);
+        if (g_ShadingMethod == ShadingMethod::FlatShading)
+        {
+            // NOTE(sbalse): Calculate the shade intensity based on how aligned is the face normal and
+            // the inverse of the light ray.
+            const float lightIntensityFactor = -Vec3Dot(normal, g_Light.m_Direction);
+
+            // NOTE(sbalse): Calculate triangle color based on the light angle.
+            triangleColor = LightApplyIntensity(meshFace.m_Color, lightIntensityFactor);
+        }
 
         const Triangle projectedTriangle =
         {

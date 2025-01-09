@@ -32,6 +32,12 @@ enum class RenderMethod
     FillTriangleWire
 };
 
+enum class ShadingMethod
+{
+    None,
+    FlatShading
+};
+
 // NOTE(sbalse): extern as these will be initialized in display.cpp
 extern constinit SDL_Window* g_Window;
 extern constinit SDL_Renderer* g_Renderer;
@@ -41,6 +47,7 @@ extern constinit int g_WindowHeight;
 
 constinit CullMethod g_CullMethod;
 constinit RenderMethod g_RenderMethod;
+constinit ShadingMethod g_ShadingMethod;
 
 bool InitializeWindow(const std::string_view windowTitle);
 void DrawGrid();

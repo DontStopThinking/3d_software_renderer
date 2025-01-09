@@ -21,5 +21,7 @@ Following the following steps to build and run the project:
 - `2` to display only wireframe.
 - `3` to draw filled.
 - `4` to draw both filled and wireframe.
+- `5` to enable flat shading.
+- `6` to disable shading.
 - `d` to disable backface culling.
 - `c` to enable backface culling.
