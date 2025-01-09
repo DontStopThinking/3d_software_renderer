@@ -52,9 +52,9 @@ static void Setup()
     g_ProjMatrix = Mat4MakePerspective(fovRadians, aspect, znear, zfar);
 
     // NOTE(sbalse): Load the cube values in the mesh data structure.
-    LoadCubeMeshData();
+    // LoadCubeMeshData();
 
-    // LoadObjFileData("assets/f22.obj");
+    LoadObjFileData("assets/f22.obj");
 
     g_TrianglesToRender.reserve(g_Mesh.m_Faces.size());
 }
@@ -313,12 +313,12 @@ static void Update()
         g_TrianglesToRender.emplace_back(projectedTriangle);
     }
 
-    // NOTE(sbalse): Sort the triangles by their avg depth. This is to ensure that the faces are
-    // rendered in the correct order of their depth.
+    // NOTE(sbalse): Sort the triangles in descending order of their avg depth. This is to ensure
+    // that the faces get rendered in the correct order.
     std::sort(
         std::begin(g_TrianglesToRender),
         std::end(g_TrianglesToRender),
-        [](const Triangle& t1, const Triangle& t2) -> bool { return t1.m_AvgDepth < t2.m_AvgDepth; });
+        [](const Triangle& t1, const Triangle& t2) -> bool { return t1.m_AvgDepth > t2.m_AvgDepth; });
 }
 
 static void Render()
