@@ -107,44 +107,44 @@ static void ProcessInput()
                 }
                 else
                 {
-                    LOG_INFO("Stopping printing of FPS.");
+                    LOG_INFO("Stopped printing of FPS.");
                 }
             }
             // NOTE(sbalse): 1 to draw wireframe and vertices.
             else if (event.key.keysym.sym == SDLK_1)
             {
                 g_RenderMethod = RenderMethod::WireVertex;
-                LOG_INFO("Setting render method to \"WireVertex\".");
+                LOG_INFO("Set render method to \"WireVertex\".");
             }
             // NOTE(sbalse): 2 to display ONLY wireframe.
             else if (event.key.keysym.sym == SDLK_2)
             {
                 g_RenderMethod = RenderMethod::Wire;
-                LOG_INFO("Setting render method to \"Wire\".");
+                LOG_INFO("Set render method to \"Wire\".");
             }
             // NOTE(sbalse): 3 to draw filled triangles.
             else if (event.key.keysym.sym == SDLK_3)
             {
                 g_RenderMethod = RenderMethod::FillTriangle;
-                LOG_INFO("Setting render method to \"FillTriangle\".");
+                LOG_INFO("Set render method to \"FillTriangle\".");
             }
             // NOTE(sbalse): 4 to display both filled and wireframe.
             else if (event.key.keysym.sym == SDLK_4)
             {
                 g_RenderMethod = RenderMethod::FillTriangleWire;
-                LOG_INFO("Setting render method to \"FillTriangleWire\".");
+                LOG_INFO("Set render method to \"FillTriangleWire\".");
             }
             // NOTE(sbalse): c to enable backface culling.
             else if (event.key.keysym.sym == SDLK_c)
             {
                 g_CullMethod = CullMethod::Backface;
-                LOG_INFO("Setting cull method to \"Backface\".");
+                LOG_INFO("Set cull method to \"Backface\".");
             }
             // NOTE(sbalse): d to disable backface culling.
             else if (event.key.keysym.sym == SDLK_d)
             {
                 g_CullMethod = CullMethod::None;
-                LOG_INFO("Setting render method to \"None\".");
+                LOG_INFO("Set cull method to \"None\".");
             }
         } break;
         }
@@ -271,6 +271,9 @@ static void Update()
             projectedPoints[vertexIndex] = Mat4MulVec4Project(
                 g_ProjMatrix,
                 transformedVertices[vertexIndex]);
+
+            // NOTE(sbalse): Invert the y values to account for our flipped y axis.
+            projectedPoints[vertexIndex].m_Y *= -1;
 
             // NOTE(sbalse): Scale into the view.
             projectedPoints[vertexIndex].m_X *= (g_WindowWidth / 2.0f);
