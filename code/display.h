@@ -6,10 +6,10 @@
 #include "colorlibrary.h"
 
 // NOTE(sbalse): We will update and render these many frames in 1 second.
-constexpr u32 FPS = 30;
+inline constexpr u32 FPS = 30;
 // NOTE(sbalse): How many milliseconds each frame should take. Using 1000 as FPS is in seconds and
 // this value is in milliseconds.
-constexpr float FRAME_TARGET_TIME_MS = (1000.0f / FPS);
+inline constexpr float FRAME_TARGET_TIME_MS = (1000.0f / FPS);
 
 struct ColorBuffer
 {
@@ -29,7 +29,9 @@ enum class RenderMethod
     Wire,
     WireVertex,
     FillTriangle,
-    FillTriangleWire
+    FillTriangleWire,
+    Textured,
+    WireTextured,
 };
 
 enum class ShadingMethod
@@ -57,14 +59,6 @@ void DrawRectangle(
     const int y,
     const int width,
     const int height,
-    const u32 color);
-void DrawTriangle(
-    const int x0,
-    const int y0,
-    const int x1,
-    const int y1,
-    const int x2,
-    const int y2,
     const u32 color);
 void DrawLine(const int x0, const int y0, const int x1, const int y1, const u32 color);
 void TakeScreenshot(SDL_Renderer* renderer, const std::string_view fileNamePrefix);

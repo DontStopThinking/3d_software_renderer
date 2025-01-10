@@ -6,7 +6,8 @@
 #include "log.h"
 #include "vector.h"
 
-extern constinit Mesh g_Mesh =
+// NOTE(sbalse): Init externs.
+constinit Mesh g_Mesh =
 {
     .m_Scale = { 1.0f, 1.0f, 1.0f },
 };

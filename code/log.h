@@ -43,7 +43,7 @@ namespace Internal
         }
         else
         {
-            std::snprintf(message.data(), message.size(), format.data());
+            std::snprintf(message.data(), message.size(), "%s", format.data());
         }
 
         std::FILE* outStream = nullptr;

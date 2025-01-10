@@ -12,6 +12,7 @@
 #include "display.h"
 #include "mesh.h"
 #include "light.h"
+#include "texture.h"
 
 constinit bool g_IsRunning = false;
 constinit u32 g_PreviousFrameTimeMS = 0u; // NOTE(sbalse): Time taken by the previous frame in milliseconds.
@@ -30,7 +31,7 @@ static void Setup()
 {
     // NOTE(sbalse): Init the render mode, triangle culling method and shading method.
     g_CullMethod = CullMethod::Backface;
-    g_RenderMethod = RenderMethod::FillTriangle;
+    g_RenderMethod = RenderMethod::WireTextured;
     g_ShadingMethod = ShadingMethod::FlatShading;
 
     // NOTE(sbalse): Allocate the color buffer.
@@ -52,10 +53,13 @@ static void Setup()
     constexpr float zfar = 100.0f;
     g_ProjMatrix = Mat4MakePerspective(fovRadians, aspect, znear, zfar);
 
-    // NOTE(sbalse): Load the cube values in the mesh data structure.
-    // LoadCubeMeshData();
+    // NOTE(sbalse): Load the hardcoded texture data from the static array.
+    g_MeshTexture = reinterpret_cast<const u32*>(REDBRICK_TEXTURE);
 
-    LoadObjFileData("assets/f22.obj");
+    // NOTE(sbalse): Load the cube values in the mesh data structure.
+    LoadCubeMeshData();
+
+    // LoadObjFileData("assets/f22.obj");
 
     g_TrianglesToRender.reserve(g_Mesh.m_Faces.size());
 }
@@ -135,15 +139,29 @@ static void ProcessInput()
                 g_RenderMethod = RenderMethod::FillTriangleWire;
                 LOG_INFO("Set render method to \"FillTriangleWire\".");
             }
+            // NOTE(sbalse): 5 to enable flat shading.
             else if (event.key.keysym.sym == SDLK_5)
             {
                 g_ShadingMethod = ShadingMethod::FlatShading;
                 LOG_INFO("Set shading method to \"FlatShading\".");
             }
+            // NOTE(sbalse): 6 to disable shading.
             else if (event.key.keysym.sym == SDLK_6)
             {
                 g_ShadingMethod = ShadingMethod::None;
                 LOG_INFO("Set shading method to \"None\".");
+            }
+            // NOTE(sbalse): 7 to display textured.
+            else if (event.key.keysym.sym == SDLK_7)
+            {
+                g_RenderMethod = RenderMethod::Textured;
+                LOG_INFO("Set render method to \"Textured\".");
+            }
+            // NOTE(sbalse): 8 to display textured and wired.
+            else if (event.key.keysym.sym == SDLK_8)
+            {
+                g_RenderMethod = RenderMethod::WireTextured;
+                LOG_INFO("Set render method to \"WireTextured\".");
             }
             // NOTE(sbalse): c to enable backface culling.
             else if (event.key.keysym.sym == SDLK_c)
@@ -321,6 +339,12 @@ static void Update()
                 { projectedPoints[1].m_X, projectedPoints[1].m_Y },
                 { projectedPoints[2].m_X, projectedPoints[2].m_Y },
             },
+            .m_TexCoords =
+            {
+                { meshFace.m_AUV },
+                { meshFace.m_BUV },
+                { meshFace.m_CUV },
+            },
             .m_Color = triangleColor,
             .m_AvgDepth = avgDepth,
         };
@@ -383,9 +407,30 @@ static void Render()
                 RED);
         }
 
+        // NOTE(sbalse): Draw textured triangle.
+        if (g_RenderMethod == RenderMethod::Textured
+            || g_RenderMethod == RenderMethod::WireTextured)
+        {
+            DrawTexturedTriangle(
+                static_cast<int>(currentTriangle.m_Points[0].m_X),
+                static_cast<int>(currentTriangle.m_Points[0].m_Y),
+                currentTriangle.m_TexCoords[0].m_U,
+                currentTriangle.m_TexCoords[0].m_V,
+                static_cast<int>(currentTriangle.m_Points[1].m_X),
+                static_cast<int>(currentTriangle.m_Points[1].m_Y),
+                currentTriangle.m_TexCoords[1].m_U,
+                currentTriangle.m_TexCoords[1].m_U,
+                static_cast<int>(currentTriangle.m_Points[2].m_X),
+                static_cast<int>(currentTriangle.m_Points[2].m_Y),
+                currentTriangle.m_TexCoords[2].m_U,
+                currentTriangle.m_TexCoords[2].m_U,
+                g_MeshTexture);
+        }
+
         if (g_RenderMethod == RenderMethod::Wire
             || g_RenderMethod == RenderMethod::WireVertex
-            || g_RenderMethod == RenderMethod::FillTriangleWire)
+            || g_RenderMethod == RenderMethod::FillTriangleWire
+            || g_RenderMethod == RenderMethod::WireTextured)
         {
             // NOTE(sbalse): Draw mesh wireframe triangles.
             DrawTriangle(

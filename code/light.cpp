@@ -4,7 +4,8 @@
 
 #include "colorlibrary.h"
 
-extern constinit Light g_Light =
+// NOTE(sbalse): Init externs.
+constinit Light g_Light =
 {
     .m_Direction = { .m_Z = 1 } // NOTE(sbalse): Z = 1 means light goes from camera into the screen.
 };

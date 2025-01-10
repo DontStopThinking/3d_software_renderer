@@ -125,20 +125,6 @@ void DrawRectangle(
     }
 }
 
-void DrawTriangle(
-    const int x0,
-    const int y0,
-    const int x1,
-    const int y1,
-    const int x2,
-    const int y2,
-    const u32 color)
-{
-    DrawLine(x0, y0, x1, y1, color);
-    DrawLine(x1, y1, x2, y2, color);
-    DrawLine(x2, y2, x0, y0, color);
-}
-
 void DrawLine(const int x0, const int y0, const int x1, const int y1, const u32 color)
 {
     const int deltaX = x1 - x0;

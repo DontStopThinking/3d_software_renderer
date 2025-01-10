@@ -8,6 +8,7 @@
     <ClCompile Include="..\..\code\triangle.cpp" />
     <ClCompile Include="..\..\code\matrix.cpp" />
     <ClCompile Include="..\..\code\light.cpp" />
+    <ClCompile Include="..\..\code\texture.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\code\common.h" />
@@ -19,5 +20,6 @@
     <ClInclude Include="..\..\code\colorlibrary.h" />
     <ClInclude Include="..\..\code\matrix.h" />
     <ClInclude Include="..\..\code\light.h" />
+    <ClInclude Include="..\..\code\texture.h" />
   </ItemGroup>
 </Project>

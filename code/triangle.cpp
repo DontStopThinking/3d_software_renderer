@@ -1,13 +1,15 @@
 #include "triangle.h"
 
+#include "log.h"
 #include "display.h"
 
-static void IntSwap(int* a, int* b)
-{
-    const int tmp = *a;
-    *a = *b;
-    *b = tmp;
-}
+#define SWAP(Type, v1, v2) \
+do \
+{ \
+    Type temp = v2; \
+    v2 = v1; \
+    v1 = temp; \
+} while (0)
 
 /*
 NOTE(sbalse): Draw a filled triangle with a flat bottom:
@@ -62,7 +64,7 @@ NOTE(sbalse): Draw a filled triangle with a flat top:
                  \    \
                    \   \
                      \ \
-                      \\
+                       \
                       (x2, y2)
 */
 static void FillFlatTopTriangle(
@@ -91,6 +93,21 @@ static void FillFlatTopTriangle(
     }
 }
 
+void DrawTriangle(
+    const int x0,
+    const int y0,
+    const int x1,
+    const int y1,
+    const int x2,
+    const int y2,
+    const u32 color)
+{
+    DrawLine(x0, y0, x1, y1, color);
+    DrawLine(x1, y1, x2, y2, color);
+    DrawLine(x2, y2, x0, y0, color);
+}
+
+
 /*
 NOTE(sbalse): Draw a filled triangle with the flat-top/flat-bottom method.
           (x0, y0)
@@ -108,7 +125,7 @@ NOTE(sbalse): Draw a filled triangle with the flat-top/flat-bottom method.
                  \    \
                    \  \
                      \ \
-                      \\
+                       \
                       (x2, y2)
 */
 void DrawFilledTriangle(
@@ -124,18 +141,18 @@ void DrawFilledTriangle(
     // NOTE(sbalse): Sort vertices by y-coordinate ascending (y0 < y1 < y2);
     if (y0 > y1)
     {
-        IntSwap(&y0, &y1);
-        IntSwap(&x0, &x1);
+        SWAP(int, x0, x1);
+        SWAP(int, y0, y1);
     }
     if (y1 > y2)
     {
-        IntSwap(&y1, &y2);
-        IntSwap(&x1, &x2);
+        SWAP(int, x1, x2);
+        SWAP(int, y1, y2);
     }
     if (y0 > y1)
     {
-        IntSwap(&y0, &y1);
-        IntSwap(&x0, &x1);
+        SWAP(int, x0, x1);
+        SWAP(int, y0, y1);
     }
 
     if (y1 == y2)
@@ -159,5 +176,117 @@ void DrawFilledTriangle(
         FillFlatBottomTriangle(x0, y0, x1, y1, mx, my, color);
 
         FillFlatTopTriangle(x1, y1, mx, my, x2, y2, color);
+    }
+}
+
+/*
+NOTE(sbalse): Draw a textured triangle with the flat-top/flat-bottom method.
+          (v0)
+           / \
+          /   \
+         /     \
+        /       \
+       /         \
+   (v1)-----------\
+       \          \
+         \        \
+           \       \
+             \      \
+               \     \
+                 \    \
+                   \  \
+                     \ \
+                       \
+                      (v2)
+*/
+void DrawTexturedTriangle(
+    int x0, int y0, float u0, float v0,
+    int x1, int y1, float u1, float v1,
+    int x2, int y2, float u2, float v2,
+    const u32* const texture
+)
+{
+    // NOTE(sbalse): Loop all the pixels of the triangle to render them based on the color that
+    // comes from the texture.
+
+    // NOTE(sbalse): Sort vertices by y-coordinate ascending (y0 < y1 < y2);
+    if (y0 > y1)
+    {
+        SWAP(int, x0, x1);
+        SWAP(int, y0, y1);
+        SWAP(float, u0, u1);
+        SWAP(float, v0, v1);
+    }
+    if (y1 > y2)
+    {
+        SWAP(int, x1, x2);
+        SWAP(int, y1, y2);
+        SWAP(float, u1, u2);
+        SWAP(float, v1, v2);
+    }
+    if (y0 > y1)
+    {
+        SWAP(int, x0, x1);
+        SWAP(int, y0, y1);
+        SWAP(float, u0, u1);
+        SWAP(float, v0, v1);
+    }
+
+    /////////// NOTE(sbalse): Render the upper part of the triangle (flat-bottom). ////////////////
+
+    // NOTE(sbalse): Use inverse slopes since we want to know how much our x changes with y (instead
+    // of the other way around).
+    float invSlope1 = (y1 - y0 != 0) ? (static_cast<float>(x1 - x0) / std::abs(y1 - y0)) : 0.0f;
+    float invSlope2 = (y2 - y0 != 0) ? (static_cast<float>(x2 - x0) / std::abs(y2 - y0)) : 0.0f;
+
+    if (y1 - y0 != 0)
+    {
+        for (int y = y0; y <= y1; y++)
+        {
+            /* NOTE(sbalse) : Explaination of this formula :
+            (y - y1) is the entire range from start to end of y. Then we multiply by the slope to
+            get the correct scaling factor to get where we want to be in the range. The first "x1 +"
+            is just to offset the range of values by the start value of x0. */
+            int xStart = static_cast<int>(x1 + (y - y1) * invSlope1);
+            int xEnd = static_cast<int>(x0 + (y - y0) * invSlope2);
+
+            if (xEnd < xStart)
+            {
+                // NOTE(sbalse): Swap if xStart is to the right of xEnd.
+                SWAP(int, xStart, xEnd);
+            }
+
+            for (int x = xStart; x < xEnd; x++)
+            {
+                // TODO(sbalse): Draw our pixel with the color that comes from the texture.
+                DrawPixel(x, y, (x % 2 == 0 && y % 2 == 0) ? MAGENTA : BLACK);
+            }
+        }
+    }
+
+    /////////// NOTE(sbalse): Render the bottom part of the triangle (flat-top). /////////////////
+
+    invSlope1 = (y2 - y1 != 0) ? (static_cast<float>(x2 - x1) / std::abs(y2 - y1)) : 0.0f;
+    invSlope2 = (y2 - y0 != 0) ? (static_cast<float>(x2 - x0) / std::abs(y2 - y0)) : 0.0f;
+
+    if (y2 - y1 != 0)
+    {
+        for (int y = y1; y <= y2; y++)
+        {
+            int xStart = static_cast<int>(x1 + (y - y1) * invSlope1);
+            int xEnd = static_cast<int>(x2 + (y - y2) * invSlope2);
+
+            if (xEnd < xStart)
+            {
+                // NOTE(sbalse): Swap if xStart is to the right of xEnd.
+                SWAP(int, xStart, xEnd);
+            }
+
+            for (int x = xStart; x < xEnd; x++)
+            {
+                // TODO(sbalse): Draw our pixel with the color that comes from the texture.
+                DrawPixel(x, y, (x % 2 == 0 && y % 2 == 0) ? MAGENTA : BLACK);
+            }
+        }
     }
 }

@@ -16,6 +16,7 @@
     <ClCompile Include="..\..\code\main.cpp" />
     <ClCompile Include="..\..\code\matrix.cpp" />
     <ClCompile Include="..\..\code\mesh.cpp" />
+    <ClCompile Include="..\..\code\texture.cpp" />
     <ClCompile Include="..\..\code\triangle.cpp" />
     <ClCompile Include="..\..\code\vector.cpp" />
   </ItemGroup>
@@ -27,6 +28,7 @@
     <ClInclude Include="..\..\code\log.h" />
     <ClInclude Include="..\..\code\matrix.h" />
     <ClInclude Include="..\..\code\mesh.h" />
+    <ClInclude Include="..\..\code\texture.h" />
     <ClInclude Include="..\..\code\triangle.h" />
     <ClInclude Include="..\..\code\vector.h" />
   </ItemGroup>
