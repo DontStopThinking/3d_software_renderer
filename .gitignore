@@ -3,6 +3,7 @@ bin/
 tmp/
 *.user
 data/*.bmp
+code/compile_commands.json
 
 # Compile score VS extension files.
 projects/compileData.**

@@ -419,11 +419,11 @@ static void Render()
                 static_cast<int>(currentTriangle.m_Points[1].m_X),
                 static_cast<int>(currentTriangle.m_Points[1].m_Y),
                 currentTriangle.m_TexCoords[1].m_U,
-                currentTriangle.m_TexCoords[1].m_U,
+                currentTriangle.m_TexCoords[1].m_V,
                 static_cast<int>(currentTriangle.m_Points[2].m_X),
                 static_cast<int>(currentTriangle.m_Points[2].m_Y),
                 currentTriangle.m_TexCoords[2].m_U,
-                currentTriangle.m_TexCoords[2].m_U,
+                currentTriangle.m_TexCoords[2].m_V,
                 g_MeshTexture);
         }
 
