@@ -4,6 +4,10 @@
 #include <vector>
 #include <algorithm>
 #include <SDL.h>
+extern "C"
+{
+    #include <upng.h>
+}
 
 #include "log.h"
 #include "common.h"
@@ -484,6 +488,7 @@ static void FreeResources()
     std::free(g_ColorBuffer.m_Buffer);
     g_ColorBuffer = {};
     SDL_DestroyTexture(g_ColorBuffer.m_Texture);
+    upng_free(g_PNGTexture);
 }
 
 int main(int argc, char* argv[])
