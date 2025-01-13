@@ -165,10 +165,10 @@ void TakeScreenshot(SDL_Renderer* renderer, const std::string_view fileNamePrefi
         rendererWidth,
         rendererHeight,
         32,
-        0x00FF0000,
-        0x0000FF00,
-        0x000000FF,
-        0xFF000000
+        RED_MASK,
+        GREEN_MASK,
+        BLUE_MASK,
+        ALPHA_MASK
     );
     SDL_RenderReadPixels(
         renderer,

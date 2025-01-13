@@ -19,6 +19,7 @@
     <ClCompile Include="..\..\code\texture.cpp" />
     <ClCompile Include="..\..\code\triangle.cpp" />
     <ClCompile Include="..\..\code\vector.cpp" />
+    <ClCompile Include="..\..\extern\upng-master\upng.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\code\colorlibrary.h" />
@@ -31,6 +32,7 @@
     <ClInclude Include="..\..\code\texture.h" />
     <ClInclude Include="..\..\code\triangle.h" />
     <ClInclude Include="..\..\code\vector.h" />
+    <ClInclude Include="..\..\extern\upng-master\upng.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
@@ -70,13 +72,13 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)..\bin\$(Configuration)\$(ProjectName)\</OutDir>
     <IntDir>$(SolutionDir)..\tmp\$(Configuration)\$(ProjectName)\</IntDir>
-    <ExternalIncludePath>$(SolutionDir)/../extern/SDL2-2.30.10/include/;$(ExternalIncludePath)</ExternalIncludePath>
+    <ExternalIncludePath>$(SolutionDir)/../extern/upng-master/;$(SolutionDir)/../extern/SDL2-2.30.10/include/;$(ExternalIncludePath)</ExternalIncludePath>
     <LibraryPath>$(SolutionDir)/../extern/SDL2-2.30.10/lib/x64/;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)..\bin\$(Configuration)\$(ProjectName)\</OutDir>
     <IntDir>$(SolutionDir)..\tmp\$(Configuration)\$(ProjectName)\</IntDir>
-    <ExternalIncludePath>$(SolutionDir)/../extern/SDL2-2.30.10/include/;$(ExternalIncludePath)</ExternalIncludePath>
+    <ExternalIncludePath>$(SolutionDir)/../extern/upng-master/;$(SolutionDir)/../extern/SDL2-2.30.10/include/;$(ExternalIncludePath)</ExternalIncludePath>
     <LibraryPath>$(SolutionDir)/../extern/SDL2-2.30.10/lib/x64/;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">

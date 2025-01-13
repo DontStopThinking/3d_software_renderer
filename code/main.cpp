@@ -40,7 +40,7 @@ static void Setup()
 
     g_ColorBuffer.m_Texture = SDL_CreateTexture(
         g_Renderer,
-        SDL_PIXELFORMAT_ARGB8888,
+        SDL_PIXELFORMAT_RGBA32,
         SDL_TEXTUREACCESS_STREAMING,
         g_WindowWidth,
         g_WindowHeight);
@@ -52,11 +52,9 @@ static void Setup()
     constexpr float zfar = 100.0f;
     g_ProjMatrix = Mat4MakePerspective(fovRadians, aspect, znear, zfar);
 
-    // NOTE(sbalse): Load the hardcoded texture data from the static array.
-    g_MeshTexture = reinterpret_cast<const u32*>(REDBRICK_TEXTURE);
-
     // NOTE(sbalse): Load the cube values in the mesh data structure.
     LoadCubeMeshData();
+    LoadPNGTextureData("assets/cube.png");
 
     // LoadObjFileData("assets/f22.obj");
 

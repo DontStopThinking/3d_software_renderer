@@ -2,6 +2,7 @@ bin/
 .vs/
 tmp/
 *.user
+data/screenshots/
 data/*.bmp
 
 # Clangd files.
