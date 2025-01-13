@@ -362,8 +362,8 @@ void DrawTexel(
 
     // NOTE(sbalse): The interpolated value will be between 0 and 1 so we need to multiply it by the
     // texture width and height to map the UV coordinates to the full texture width and height.
-    const int texelX = std::abs(static_cast<int>(interpolatedU * g_TextureWidth));
-    const int texelY = std::abs(static_cast<int>(interpolatedV * g_TextureHeight));
+    const int texelX = std::abs(static_cast<int>(interpolatedU * g_TextureWidth) % g_TextureWidth);
+    const int texelY = std::abs(static_cast<int>(interpolatedV * g_TextureHeight) % g_TextureHeight);
 
     // NOTE(sbalse): Draw the corresponding color from our texture.
     const u32 color = texture[(g_TextureWidth * texelY) + texelX];
