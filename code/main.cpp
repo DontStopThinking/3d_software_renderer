@@ -17,7 +17,6 @@
 constinit bool g_IsRunning = false;
 constinit u32 g_PreviousFrameTimeMS = 0u; // NOTE(sbalse): Time taken by the previous frame in milliseconds.
 
-constexpr int FOV_FACTOR = 640;
 constexpr Vec3 CAMERA_POSITION = { .m_X = 0, .m_Y = 0, .m_Z = 0 };
 
 constinit std::vector<Triangle> g_TrianglesToRender;
@@ -335,9 +334,24 @@ static void Update()
         {
             .m_Points =
             {
-                { projectedPoints[0].m_X, projectedPoints[0].m_Y },
-                { projectedPoints[1].m_X, projectedPoints[1].m_Y },
-                { projectedPoints[2].m_X, projectedPoints[2].m_Y },
+                {
+                    projectedPoints[0].m_X,
+                    projectedPoints[0].m_Y,
+                    projectedPoints[0].m_Z,
+                    projectedPoints[0].m_W
+                },
+                {
+                    projectedPoints[1].m_X,
+                    projectedPoints[1].m_Y,
+                    projectedPoints[1].m_Z,
+                    projectedPoints[1].m_W
+                },
+                {
+                    projectedPoints[2].m_X,
+                    projectedPoints[2].m_Y,
+                    projectedPoints[2].m_Z,
+                    projectedPoints[2].m_W
+                },
             },
             .m_TexCoords =
             {
@@ -375,12 +389,16 @@ static void Render()
         {
             // NOTE(sbalse): Draw mesh face triangles.
             DrawFilledTriangle(
+                // NOTE(sbalse): vertex A.
                 static_cast<int>(currentTriangle.m_Points[0].m_X),
                 static_cast<int>(currentTriangle.m_Points[0].m_Y),
+                // NOTE(sbalse): vertex B.
                 static_cast<int>(currentTriangle.m_Points[1].m_X),
                 static_cast<int>(currentTriangle.m_Points[1].m_Y),
+                // NOTE(sbalse): vertex C.
                 static_cast<int>(currentTriangle.m_Points[2].m_X),
                 static_cast<int>(currentTriangle.m_Points[2].m_Y),
+                // NOTE(sbalse): The color.
                 currentTriangle.m_Color);
         }
 
@@ -412,18 +430,28 @@ static void Render()
             || g_RenderMethod == RenderMethod::WireTextured)
         {
             DrawTexturedTriangle(
+                // NOTE(sbalse): vertex A.
                 static_cast<int>(currentTriangle.m_Points[0].m_X),
                 static_cast<int>(currentTriangle.m_Points[0].m_Y),
+                currentTriangle.m_Points[0].m_Z,
+                currentTriangle.m_Points[0].m_W,
                 currentTriangle.m_TexCoords[0].m_U,
                 currentTriangle.m_TexCoords[0].m_V,
+                // NOTE(sbalse): vertex B.
                 static_cast<int>(currentTriangle.m_Points[1].m_X),
                 static_cast<int>(currentTriangle.m_Points[1].m_Y),
+                currentTriangle.m_Points[1].m_Z,
+                currentTriangle.m_Points[1].m_W,
                 currentTriangle.m_TexCoords[1].m_U,
                 currentTriangle.m_TexCoords[1].m_V,
+                // NOTE(sbalse): vertex C.
                 static_cast<int>(currentTriangle.m_Points[2].m_X),
                 static_cast<int>(currentTriangle.m_Points[2].m_Y),
+                currentTriangle.m_Points[2].m_Z,
+                currentTriangle.m_Points[2].m_W,
                 currentTriangle.m_TexCoords[2].m_U,
                 currentTriangle.m_TexCoords[2].m_V,
+                // NOTE(sbalse): The texture.
                 g_MeshTexture);
         }
 

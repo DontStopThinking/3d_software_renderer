@@ -49,3 +49,4 @@ Vec3 Vec3RotateZ(const Vec3 value, const float angle);
 /******** NOTE(sbalse): Vector conversion functions. ***********/
 Vec4 Vec4FromVec3(const Vec3 v);
 Vec3 Vec3FromVec4(const Vec4 v);
+Vec2 Vec2FromVec4(const Vec4 v);

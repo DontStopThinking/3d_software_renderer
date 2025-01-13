@@ -3,7 +3,13 @@ bin/
 tmp/
 *.user
 data/*.bmp
+
+# Clangd files.
 code/compile_commands.json
+code/.cache
+
+# Helix text editor files.
+.helix/
 
 # Compile score VS extension files.
 projects/compileData.**

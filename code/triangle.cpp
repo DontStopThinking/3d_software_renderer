@@ -1,6 +1,5 @@
 #include "triangle.h"
 
-#include "log.h"
 #include "display.h"
 
 #define SWAP(Type, v1, v2) \
@@ -239,9 +238,9 @@ NOTE(sbalse): Draw a textured triangle with the flat-top/flat-bottom method.
                       (v2)
 */
 void DrawTexturedTriangle(
-    int x0, int y0, float u0, float v0,
-    int x1, int y1, float u1, float v1,
-    int x2, int y2, float u2, float v2,
+    int x0, int y0, float z0, float w0, float u0, float v0,
+    int x1, int y1, float z1, float w1, float u1, float v1,
+    int x2, int y2, float z2, float w2, float u2, float v2,
     const u32* const texture
 )
 {
@@ -253,6 +252,8 @@ void DrawTexturedTriangle(
     {
         SWAP(int, x0, x1);
         SWAP(int, y0, y1);
+        SWAP(float, z0, z1);
+        SWAP(float, w0, w1);
         SWAP(float, u0, u1);
         SWAP(float, v0, v1);
     }
@@ -260,6 +261,8 @@ void DrawTexturedTriangle(
     {
         SWAP(int, x1, x2);
         SWAP(int, y1, y2);
+        SWAP(float, z1, z2);
+        SWAP(float, w1, w2);
         SWAP(float, u1, u2);
         SWAP(float, v1, v2);
     }
@@ -267,14 +270,19 @@ void DrawTexturedTriangle(
     {
         SWAP(int, x0, x1);
         SWAP(int, y0, y1);
+        SWAP(float, z0, z1);
+        SWAP(float, w0, w1);
         SWAP(float, u0, u1);
         SWAP(float, v0, v1);
     }
 
     // NOTE(sbalse): Create vectors for the 3 triangle vertices.
-    const Vec2 pointA = { static_cast<float>(x0), static_cast<float>(y0) };
-    const Vec2 pointB = { static_cast<float>(x1), static_cast<float>(y1) };
-    const Vec2 pointC = { static_cast<float>(x2), static_cast<float>(y2) };
+    const Vec4 pointA = { static_cast<float>(x0), static_cast<float>(y0), z0, w0 };
+    const Vec4 pointB = { static_cast<float>(x1), static_cast<float>(y1), z1, w1 };
+    const Vec4 pointC = { static_cast<float>(x2), static_cast<float>(y2), z2, w2 };
+    const Tex2 aUV = { u0, v0 };
+    const Tex2 bUV = { u1, v1 };
+    const Tex2 cUV = { u2, v2 };
 
     /////////// NOTE(sbalse): Render the upper part of the triangle (flat-bottom). ////////////////
 
@@ -303,7 +311,7 @@ void DrawTexturedTriangle(
             for (int x = xStart; x < xEnd; x++)
             {
                 // TODO(sbalse): Draw our pixel with the color that comes from the texture.
-                DrawTexel(x, y, pointA, pointB, pointC, u0, v0, u1, v1, u2, v2, texture);
+                DrawTexel(x, y, pointA, pointB, pointC, aUV, bUV, cUV, texture);
             }
         }
     }
@@ -328,7 +336,7 @@ void DrawTexturedTriangle(
 
             for (int x = xStart; x < xEnd; x++)
             {
-                DrawTexel(x, y, pointA, pointB, pointC, u0, v0, u1, v1, u2, v2, texture);
+                DrawTexel(x, y, pointA, pointB, pointC, aUV, bUV, cUV, texture);
             }
         }
     }
@@ -337,28 +345,60 @@ void DrawTexturedTriangle(
 void DrawTexel(
     const int x,
     const int y,
-    const Vec2 pointA,
-    const Vec2 pointB,
-    const Vec2 pointC,
-    const float u0,
-    const float v0,
-    const float u1,
-    const float v1,
-    const float u2,
-    const float v2,
+    const Vec4 pointA,
+    const Vec4 pointB,
+    const Vec4 pointC,
+    const Tex2 aUV,
+    const Tex2 bUV,
+    const Tex2 cUV,
     const u32* const texture
 )
 {
-    const Vec2 pointP = { static_cast<float>(x), static_cast<float>(y) };
-    const Vec3 weights = BarycentricWeights(pointA, pointB, pointC, pointP);
+    const Vec2 p = { static_cast<float>(x), static_cast<float>(y) };
+    const Vec2 a = Vec2FromVec4(pointA);
+    const Vec2 b = Vec2FromVec4(pointB);
+    const Vec2 c = Vec2FromVec4(pointC);
+
+    const Vec3 weights = BarycentricWeights(a, b, c, p);
 
     const float alpha = weights.m_X;
     const float beta = weights.m_Y;
     const float gamma = weights.m_Z;
 
-    // NOTE(sbalse): Calculating barycentric coordinates gives us the interpolated U and V values.
-    const float interpolatedU = (u0 * alpha) + (u1 * beta) + (u2 * gamma);
-    const float interpolatedV = (v0 * alpha) + (v1 * beta) + (v2 * gamma);
+    // NOTE(sbalse): Calculating barycentric coordinates gives us the interpolated U/w and V/w values.
+    // The 1/w factor is what performs perspective correction on our texture. Perspective correction
+    // is necessary otherwise the texture will appear distorted.
+
+    // NOTE(sbalse): The formula for interpolated U/w is:
+    // (Ua/Wa * alpha) + (Ub/Wb * beta) + (Uc/Wc * gamma).
+    // Same for interpolated V.
+
+    // NOTE(sbalse): Precompute the reciprocal values of W for points A, B and C along with their
+    // respective barycentric weights.
+    const float reciprocalWAlphaOfPointA = alpha / pointA.m_W;
+    const float reciprocalWBetaOfPointB = beta / pointB.m_W;
+    const float reciprocalWGammaPointC = gamma / pointC.m_W;
+
+    // NOTE(sbalse): Interpolate the reciprocal of W.
+    const float interpolatedReciprocalW =
+        reciprocalWAlphaOfPointA
+        + reciprocalWBetaOfPointB
+        + reciprocalWGammaPointC;
+
+    // NOTE(sbalse): Interpolate U and V using the precomputed reciprocals of W.
+    float interpolatedU =
+        (aUV.m_U * reciprocalWAlphaOfPointA)
+        + (bUV.m_U * reciprocalWBetaOfPointB)
+        + (cUV.m_U * reciprocalWGammaPointC);
+    float interpolatedV =
+        (aUV.m_V * reciprocalWAlphaOfPointA)
+        + (bUV.m_V * reciprocalWBetaOfPointB)
+        + (cUV.m_V * reciprocalWGammaPointC);
+
+    // NOTE(sbalse): Convert the interpolated U and V back into screen space by dividing them by
+    // the interpolated W.
+    interpolatedU /= interpolatedReciprocalW;
+    interpolatedV /= interpolatedReciprocalW;
 
     // NOTE(sbalse): The interpolated value will be between 0 and 1 so we need to multiply it by the
     // texture width and height to map the UV coordinates to the full texture width and height.

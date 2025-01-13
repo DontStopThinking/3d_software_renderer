@@ -21,7 +21,7 @@ struct Face
 
 struct Triangle
 {
-    Vec2 m_Points[3];
+    Vec4 m_Points[3];
     Tex2 m_TexCoords[3];
     u32 m_Color;
     float m_AvgDepth; // NOTE(sbalse): Depth of the triangle, used to sort the face.
@@ -44,9 +44,9 @@ void DrawFilledTriangle(
 );
 
 void DrawTexturedTriangle(
-    int x0, int y0, float u0, float v0,
-    int x1, int y1, float u1, float v1,
-    int x2, int y2, float u2, float v2,
+    int x0, int y0, float z0, float w0, float u0, float v0,
+    int x1, int y1, float z1, float w1, float u1, float v1,
+    int x2, int y2, float z2, float w2, float u2, float v2,
     const u32* const texture
 );
 
@@ -58,14 +58,11 @@ void DrawTexturedTriangle(
 void DrawTexel(
     const int x,
     const int y,
-    const Vec2 pointA,
-    const Vec2 pointB,
-    const Vec2 pointC,
-    const float u0,
-    const float v0,
-    const float u1,
-    const float v1,
-    const float u2,
-    const float v2,
+    const Vec4 pointA,
+    const Vec4 pointB,
+    const Vec4 pointC,
+    const Tex2 aUV,
+    const Tex2 bUV,
+    const Tex2 cUV,
     const u32* const texture
 );

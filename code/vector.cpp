@@ -192,3 +192,14 @@ Vec3 Vec3FromVec4(const Vec4 v)
 
     return result;
 }
+
+Vec2 Vec2FromVec4(const Vec4 v)
+{
+    const Vec2 result =
+    {
+        .m_X = v.m_X,
+        .m_Y = v.m_Y,
+    };
+
+    return result;
+}
