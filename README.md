@@ -17,6 +17,7 @@ Following the following steps to build and run the project:
 - `F9` to take a screenshot. Saved as `screenshot-{timestamp}.bmp` in the executable directory.
 - `p` to pause.
 - `f` to toggle logging of FPS and average frame time.
+- `g` to toggle rendering background grid.
 - `1` to draw only wireframe and vertices.
 - `2` to display only wireframe.
 - `3` to draw filled.

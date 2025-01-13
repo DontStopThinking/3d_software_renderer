@@ -18,10 +18,21 @@
     <None Include="$(MSBuildThisFileDirectory)..\..\README.md" />
   </ItemGroup>
   <ItemGroup>
+    <Object Include="$(MSBuildThisFileDirectory)..\..\data\assets\crab.obj" />
     <Object Include="$(MSBuildThisFileDirectory)..\..\data\assets\cube.obj" />
+    <Object Include="$(MSBuildThisFileDirectory)..\..\data\assets\drone.obj" />
+    <Object Include="$(MSBuildThisFileDirectory)..\..\data\assets\efa.obj" />
+    <Object Include="$(MSBuildThisFileDirectory)..\..\data\assets\f117.obj" />
     <Object Include="$(MSBuildThisFileDirectory)..\..\data\assets\f22.obj" />
+    <Object Include="$(MSBuildThisFileDirectory)..\..\data\assets\sphere.obj" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="$(MSBuildThisFileDirectory)..\..\data\assets\crab.png" />
     <Image Include="$(MSBuildThisFileDirectory)..\..\data\assets\cube.png" />
+    <Image Include="$(MSBuildThisFileDirectory)..\..\data\assets\drone.png" />
+    <Image Include="$(MSBuildThisFileDirectory)..\..\data\assets\efa.png" />
+    <Image Include="$(MSBuildThisFileDirectory)..\..\data\assets\f117.png" />
+    <Image Include="$(MSBuildThisFileDirectory)..\..\data\assets\f22.png" />
+    <Image Include="$(MSBuildThisFileDirectory)..\..\data\assets\pikuma.png" />
   </ItemGroup>
 </Project>

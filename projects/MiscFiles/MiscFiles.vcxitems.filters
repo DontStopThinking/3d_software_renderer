@@ -10,15 +10,48 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <Object Include="$(MSBuildThisFileDirectory)..\..\data\assets\crab.obj">
+      <Filter>assets</Filter>
+    </Object>
     <Object Include="$(MSBuildThisFileDirectory)..\..\data\assets\cube.obj">
+      <Filter>assets</Filter>
+    </Object>
+    <Object Include="$(MSBuildThisFileDirectory)..\..\data\assets\drone.obj">
+      <Filter>assets</Filter>
+    </Object>
+    <Object Include="$(MSBuildThisFileDirectory)..\..\data\assets\efa.obj">
       <Filter>assets</Filter>
     </Object>
     <Object Include="$(MSBuildThisFileDirectory)..\..\data\assets\f22.obj">
       <Filter>assets</Filter>
     </Object>
+    <Object Include="$(MSBuildThisFileDirectory)..\..\data\assets\f117.obj">
+      <Filter>assets</Filter>
+    </Object>
+    <Object Include="$(MSBuildThisFileDirectory)..\..\data\assets\sphere.obj">
+      <Filter>assets</Filter>
+    </Object>
   </ItemGroup>
   <ItemGroup>
+    <Image Include="$(MSBuildThisFileDirectory)..\..\data\assets\crab.png">
+      <Filter>assets</Filter>
+    </Image>
     <Image Include="$(MSBuildThisFileDirectory)..\..\data\assets\cube.png">
+      <Filter>assets</Filter>
+    </Image>
+    <Image Include="$(MSBuildThisFileDirectory)..\..\data\assets\drone.png">
+      <Filter>assets</Filter>
+    </Image>
+    <Image Include="$(MSBuildThisFileDirectory)..\..\data\assets\efa.png">
+      <Filter>assets</Filter>
+    </Image>
+    <Image Include="$(MSBuildThisFileDirectory)..\..\data\assets\f22.png">
+      <Filter>assets</Filter>
+    </Image>
+    <Image Include="$(MSBuildThisFileDirectory)..\..\data\assets\f117.png">
+      <Filter>assets</Filter>
+    </Image>
+    <Image Include="$(MSBuildThisFileDirectory)..\..\data\assets\pikuma.png">
       <Filter>assets</Filter>
     </Image>
   </ItemGroup>

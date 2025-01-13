@@ -27,6 +27,7 @@ constinit std::vector<Triangle> g_TrianglesToRender;
 
 constinit bool g_Paused = false;
 constinit bool g_PrintFPS = false;
+constinit bool g_DisplayGrid = false;
 
 constinit Mat4 g_ProjMatrix = {};
 
@@ -34,7 +35,7 @@ static void Setup()
 {
     // NOTE(sbalse): Init the render mode, triangle culling method and shading method.
     g_CullMethod = CullMethod::Backface;
-    g_RenderMethod = RenderMethod::WireTextured;
+    g_RenderMethod = RenderMethod::Textured;
     g_ShadingMethod = ShadingMethod::FlatShading;
 
     // NOTE(sbalse): Allocate the color buffer.
@@ -58,9 +59,9 @@ static void Setup()
 
     // NOTE(sbalse): Load the cube values in the mesh data structure.
     // LoadCubeMeshData();
-    LoadPNGTextureData("assets/cube.png");
 
-    LoadObjFileData("assets/f22.obj");
+    LoadObjFileData("assets/crab.obj");
+    LoadPNGTextureData("assets/crab.png");
 
     g_TrianglesToRender.reserve(g_Mesh.m_Faces.size());
 }
@@ -114,6 +115,18 @@ static void ProcessInput()
                 else
                 {
                     LOG_INFO("Stopped printing of FPS.");
+                }
+            }
+            else if (event.key.keysym.sym == SDLK_g)
+            {
+                g_DisplayGrid = !g_DisplayGrid;
+                if (g_DisplayGrid)
+                {
+                    LOG_INFO("Displaying grid.");
+                }
+                else
+                {
+                    LOG_INFO("Stopping display of grid.");
                 }
             }
             // NOTE(sbalse): 1 to draw wireframe and vertices.
@@ -195,9 +208,9 @@ static void Update()
 
     if (!g_Paused)
     {
-        g_Mesh.m_Rotation.m_X += 0.01f;
+        // g_Mesh.m_Rotation.m_X += 0.01f;
         g_Mesh.m_Rotation.m_Y += 0.01f;
-        g_Mesh.m_Rotation.m_Z += 0.01f;
+        // g_Mesh.m_Rotation.m_Z += 0.01f;
 
         // g_Mesh.m_Scale.m_X += 0.002;
         // g_Mesh.m_Scale.m_Y += 0.002;
@@ -379,7 +392,10 @@ static void Render()
 {
     ClearColorBuffer(BLACK);
 
-    DrawGrid();
+    if (g_DisplayGrid)
+    {
+        DrawGrid();
+    }
 
     // NOTE(sbalse): Loop all projected triangles and render them.
     for (const Triangle& currentTriangle : g_TrianglesToRender)
