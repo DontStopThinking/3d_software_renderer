@@ -2,6 +2,7 @@
 
 #include <cstdio>
 #include <array>
+#include <vector>
 
 #include "log.h"
 #include "vector.h"
@@ -48,6 +49,8 @@ void LoadObjFileData(const std::string_view fileName)
 
     constexpr int maxNumberOfCharactersToRead = static_cast<int>(line.size());
 
+    std::vector<Tex2> texcoords;
+
     while (std::fgets(line.data(), maxNumberOfCharactersToRead, file))
     {
         // NOTE(sbalse): Read vertex information.
@@ -57,6 +60,15 @@ void LoadObjFileData(const std::string_view fileName)
             sscanf_s(line.data(), "v %f %f %f", &vertex.m_X, &vertex.m_Y, &vertex.m_Z);
             g_Mesh.m_Vertices.emplace_back(vertex);
         }
+
+        // NOTE(sbalse): Texture coordinate information.
+        if (std::strncmp(line.data(), "vt ", 3) == 0)
+        {
+            Tex2 texcoord = {};
+            sscanf_s(line.data(), "vt %f %f", &texcoord.m_U, &texcoord.m_V);
+            texcoords.emplace_back(texcoord);
+        }
+
         // NOTE(sbalse): Read face information.
         if (std::strncmp(line.data(), "f ", 2) == 0)
         {
@@ -72,9 +84,13 @@ void LoadObjFileData(const std::string_view fileName)
 
             const Face face =
             {
-                .m_A = vertexIndices[0],
-                .m_B = vertexIndices[1],
-                .m_C = vertexIndices[2],
+                // NOTE(sbalse): Need to do -1 since numbers start at 1 in OBJ files.
+                .m_A = vertexIndices[0] - 1,
+                .m_B = vertexIndices[1] - 1,
+                .m_C = vertexIndices[2] - 1,
+                .m_AUV = texcoords[textureIndices[0] - 1],
+                .m_BUV = texcoords[textureIndices[1] - 1],
+                .m_CUV = texcoords[textureIndices[2] - 1],
                 .m_Color = WHITE,
             };
 

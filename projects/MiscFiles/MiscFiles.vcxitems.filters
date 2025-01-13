@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)..\..\.gitignore" />
+    <None Include="$(MSBuildThisFileDirectory)..\..\README.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="assets">
+      <UniqueIdentifier>{30575d8e-d535-43f7-9e94-d6385f02046f}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <Object Include="$(MSBuildThisFileDirectory)..\..\data\assets\cube.obj">
+      <Filter>assets</Filter>
+    </Object>
+    <Object Include="$(MSBuildThisFileDirectory)..\..\data\assets\f22.obj">
+      <Filter>assets</Filter>
+    </Object>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="$(MSBuildThisFileDirectory)..\..\data\assets\cube.png">
+      <Filter>assets</Filter>
+    </Image>
+  </ItemGroup>
+</Project>

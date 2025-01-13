@@ -57,10 +57,10 @@ static void Setup()
     g_ProjMatrix = Mat4MakePerspective(fovRadians, aspect, znear, zfar);
 
     // NOTE(sbalse): Load the cube values in the mesh data structure.
-    LoadCubeMeshData();
+    // LoadCubeMeshData();
     LoadPNGTextureData("assets/cube.png");
 
-    // LoadObjFileData("assets/f22.obj");
+    LoadObjFileData("assets/f22.obj");
 
     g_TrianglesToRender.reserve(g_Mesh.m_Faces.size());
 }
@@ -238,11 +238,9 @@ static void Update()
         // NOTE(sbalse): The 3 vertices that make up a triangle of a face.
         const Vec3 faceVertices[3] =
         {
-            // NOTE(sbalse): Need to subtract -1 from face since our faces are 1-indexed and C++
-            // arrays are 0-indexed.
-            g_Mesh.m_Vertices[meshFace.m_A - 1],
-            g_Mesh.m_Vertices[meshFace.m_B - 1],
-            g_Mesh.m_Vertices[meshFace.m_C - 1],
+            g_Mesh.m_Vertices[meshFace.m_A],
+            g_Mesh.m_Vertices[meshFace.m_B],
+            g_Mesh.m_Vertices[meshFace.m_C],
         };
 
         Vec4 transformedVertices[3] = {};

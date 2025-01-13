@@ -276,6 +276,11 @@ void DrawTexturedTriangle(
         SWAP(float, v0, v1);
     }
 
+    // NOTE(sbalse): Flip the V component to account for inverted UV-coordinates (V grows downwards).
+    v0 = 1.0f - v0;
+    v1 = 1.0f - v1;
+    v2 = 1.0f - v2;
+
     // NOTE(sbalse): Create vectors for the 3 triangle vertices.
     const Vec4 pointA = { static_cast<float>(x0), static_cast<float>(y0), z0, w0 };
     const Vec4 pointB = { static_cast<float>(x1), static_cast<float>(y1), z1, w1 };
