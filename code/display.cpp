@@ -13,6 +13,7 @@ constinit ZBuffer g_ZBuffer = {};
 constinit CullMethod g_CullMethod = {};
 constinit RenderMethod g_RenderMethod = {};
 constinit ShadingMethod g_ShadingMethod = {};
+constinit RenderBufferMethod g_RenderBufferMethod = {};
 
 constinit int g_WindowWidth = 1024;
 constinit int g_WindowHeight = 720;
@@ -75,6 +76,20 @@ void RenderColorBuffer()
         nullptr);
 }
 
+void RenderZBuffer()
+{
+    SDL_UpdateTexture(
+        g_ZBuffer.m_Texture,
+        nullptr,
+        g_ZBuffer.m_BufferUInt,
+        static_cast<int>(g_WindowWidth * sizeof(u32)));
+    SDL_RenderCopy(
+        g_Renderer,
+        g_ZBuffer.m_Texture,
+        nullptr,
+        nullptr);
+}
+
 // NOTE(sbalse): Clear our custom color buffer to the given color.
 void ClearColorBuffer(const u32 color)
 {
@@ -98,7 +113,12 @@ void ClearZBuffer()
             // NOTE(sbalse): Clear z-buffer to "1". "0" is the near plane and "1" is the far plane.
             // So z-buffer being 1 after clearing means that it is infinitely far away right by
             // default.
-            g_ZBuffer.m_Buffer[pixelIndex] = 1.0;
+            g_ZBuffer.m_BufferUNorm[pixelIndex] = 1.0;
+
+            // NOTE(sbalse): We represent the far plane with WHITE color. This means, objects that
+            // are closer to the camera appear darker and objects far away or no geometry appears as
+            // white in the z-buffer visualization.
+            g_ZBuffer.m_BufferUInt[pixelIndex] = WHITE;
         }
     }
 }

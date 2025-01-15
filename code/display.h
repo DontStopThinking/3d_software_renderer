@@ -20,8 +20,11 @@ struct ColorBuffer
 
 struct ZBuffer
 {
-    float* m_Buffer; // NOTE(sbalse): Color values are between 0.0f and 1.0f in this.
-    size_t m_Size;
+    float* m_BufferUNorm; // NOTE(sbalse): Color values are between 0.0f and 1.0f in this.
+    size_t m_BufferUNormSize;
+    u32* m_BufferUInt; // NOTE(sbalse): Color values are between 0 to 255 in this.
+    size_t m_BufferUIntSize;
+    SDL_Texture* m_Texture;
 };
 
 enum class CullMethod
@@ -38,6 +41,12 @@ enum class RenderMethod
     FillTriangleWire,
     Textured,
     WireTextured,
+};
+
+enum class RenderBufferMethod
+{
+    ColorBuffer,
+    ZBuffer,
 };
 
 enum class ShadingMethod
@@ -58,6 +67,7 @@ extern constinit int g_WindowHeight;
 extern constinit CullMethod g_CullMethod;
 extern constinit RenderMethod g_RenderMethod;
 extern constinit ShadingMethod g_ShadingMethod;
+extern constinit RenderBufferMethod g_RenderBufferMethod;
 
 bool InitializeWindow(const std::string_view windowTitle);
 void DrawGrid();
@@ -71,6 +81,7 @@ void DrawRectangle(
 void DrawLine(const int x0, const int y0, const int x1, const int y1, const u32 color);
 void TakeScreenshot(SDL_Renderer* renderer, const std::string_view fileNamePrefix);
 void RenderColorBuffer();
+void RenderZBuffer();
 void ClearColorBuffer(const u32 color);
 void ClearZBuffer();
 void DestroyWindow();

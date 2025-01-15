@@ -43,17 +43,29 @@ static void Setup()
     g_ColorBuffer.m_Buffer = reinterpret_cast<u32*>(std::malloc(colorBufferSize));
     g_ColorBuffer.m_Size = colorBufferSize;
 
-    // NOTE(sbalse): Allocate the z buffer.
-    const size_t zBufferUNormSize = sizeof(float) * g_WindowWidth * g_WindowWidth;
-    g_ZBuffer.m_Buffer = reinterpret_cast<float*>(std::malloc(zBufferUNormSize));
-    g_ZBuffer.m_Size = zBufferUNormSize;
-
     g_ColorBuffer.m_Texture = SDL_CreateTexture(
         g_Renderer,
         SDL_PIXELFORMAT_RGBA32,
         SDL_TEXTUREACCESS_STREAMING,
         g_WindowWidth,
         g_WindowHeight);
+
+    // NOTE(sbalse): Allocate the z buffer.
+    const size_t zBufferUNormSize = sizeof(float) * g_WindowWidth * g_WindowHeight;
+    g_ZBuffer.m_BufferUNorm = reinterpret_cast<float*>(std::malloc(zBufferUNormSize));
+    g_ZBuffer.m_BufferUNormSize = zBufferUNormSize;
+
+    const size_t zBufferUIntSize = sizeof(float) * g_WindowWidth * g_WindowHeight;
+    g_ZBuffer.m_BufferUInt = reinterpret_cast<u32*>(std::malloc(zBufferUIntSize));
+    g_ZBuffer.m_BufferUIntSize = zBufferUIntSize;
+
+    g_ZBuffer.m_Texture = SDL_CreateTexture(
+        g_Renderer,
+        SDL_PIXELFORMAT_RGB888,
+        SDL_TEXTUREACCESS_STREAMING,
+        g_WindowWidth,
+        g_WindowHeight
+    );
 
     // NOTE(sbalse): Init the perspective projection matrix.
     constexpr float fovRadians = M_PI / 3.0f; // NOTE(sbalse): Same as 180 / 3 or 60 deg.
@@ -132,6 +144,19 @@ static void ProcessInput()
                 else
                 {
                     LOG_INFO("Stopping display of grid.");
+                }
+            }
+            else if (event.key.keysym.sym == SDLK_z)
+            {
+                if (g_RenderBufferMethod == RenderBufferMethod::ColorBuffer)
+                {
+                    g_RenderBufferMethod = RenderBufferMethod::ZBuffer;
+                    LOG_INFO("Change RenderBufferMethod to \"ZBuffer\"");
+                }
+                else if (g_RenderBufferMethod == RenderBufferMethod::ZBuffer)
+                {
+                    g_RenderBufferMethod = RenderBufferMethod::ColorBuffer;
+                    LOG_INFO("Change RenderBufferMethod to \"ColorBuffer\"");
                 }
             }
             // NOTE(sbalse): 1 to draw wireframe and vertices.
@@ -489,7 +514,14 @@ static void Render()
     // NOTE(sbalse): Clear the list of triangles to render every frame loop.
     g_TrianglesToRender.clear();
 
-    RenderColorBuffer();
+    if (g_RenderBufferMethod == RenderBufferMethod::ColorBuffer)
+    {
+        RenderColorBuffer();
+    }
+    else if (g_RenderBufferMethod == RenderBufferMethod::ZBuffer)
+    {
+        RenderZBuffer();
+    }
 
     SDL_RenderPresent(g_Renderer);
 }
@@ -501,7 +533,9 @@ static void FreeResources()
     SDL_DestroyTexture(g_ColorBuffer.m_Texture);
     g_ColorBuffer = {};
 
-    std::free(g_ZBuffer.m_Buffer);
+    std::free(g_ZBuffer.m_BufferUNorm);
+    std::free(g_ZBuffer.m_BufferUInt);
+    SDL_DestroyTexture(g_ZBuffer.m_Texture);
     g_ZBuffer = {};
 
     upng_free(g_PNGTexture);

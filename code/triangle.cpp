@@ -85,11 +85,18 @@ static void DrawTrianglePixel(
     // NOTE(sbalse): Only draw the pixel if the depth value is less than the one previously stored
     // in the z-buffer.
     const u32 zBufferPos = (g_WindowWidth * y) + x;
-    if (interpolatedReciprocalW < g_ZBuffer.m_Buffer[zBufferPos])
+    if (interpolatedReciprocalW < g_ZBuffer.m_BufferUNorm[zBufferPos])
     {
         DrawPixel(x, y, color);
 
-        g_ZBuffer.m_Buffer[zBufferPos] = interpolatedReciprocalW;
+        g_ZBuffer.m_BufferUNorm[zBufferPos] = interpolatedReciprocalW;
+
+        if (g_RenderBufferMethod == RenderBufferMethod::ZBuffer)
+        {
+            const u8 grayscale = static_cast<u8>(interpolatedReciprocalW * 255.0f);
+            const u32 zcolor = (grayscale << 16) | (grayscale << 8) | grayscale;
+            g_ZBuffer.m_BufferUInt[zBufferPos] = zcolor;
+        }
     }
 }
 
@@ -168,14 +175,21 @@ static void DrawTriangleTexel(
     // NOTE(sbalse): Only draw the pixel if the depth value is less than the one previously stored
     // in the z-buffer.
     const u32 zBufferPos = (g_WindowWidth * y) + x;
-    if (interpolatedReciprocalW < g_ZBuffer.m_Buffer[zBufferPos])
+    if (interpolatedReciprocalW < g_ZBuffer.m_BufferUNorm[zBufferPos])
     {
         // NOTE(sbalse): Draw the corresponding color from our texture.
         const u32 color = texture[(g_TextureWidth * texelY) + texelX];
         DrawPixel(x, y, color);
 
         // NOTE(sbalse): Update the z-buffer value with the 1/w of this current pixel.
-        g_ZBuffer.m_Buffer[zBufferPos] = interpolatedReciprocalW;
+        g_ZBuffer.m_BufferUNorm[zBufferPos] = interpolatedReciprocalW;
+
+        if (g_RenderBufferMethod == RenderBufferMethod::ZBuffer)
+        {
+            const u8 grayscale = static_cast<u8>(interpolatedReciprocalW * 255.0f);
+            const u32 zcolor = (grayscale << 16) | (grayscale << 8) | grayscale;
+            g_ZBuffer.m_BufferUInt[zBufferPos] = zcolor;
+        }
     }
 }
 
