@@ -18,6 +18,12 @@ struct ColorBuffer
     SDL_Texture* m_Texture;
 };
 
+struct ZBuffer
+{
+    float* m_Buffer; // NOTE(sbalse): Color values are between 0.0f and 1.0f in this.
+    size_t m_Size;
+};
+
 enum class CullMethod
 {
     None,
@@ -44,12 +50,14 @@ enum class ShadingMethod
 extern constinit SDL_Window* g_Window;
 extern constinit SDL_Renderer* g_Renderer;
 extern constinit ColorBuffer g_ColorBuffer;
+extern constinit ZBuffer g_ZBuffer;
+
 extern constinit int g_WindowWidth;
 extern constinit int g_WindowHeight;
 
-constinit CullMethod g_CullMethod;
-constinit RenderMethod g_RenderMethod;
-constinit ShadingMethod g_ShadingMethod;
+extern constinit CullMethod g_CullMethod;
+extern constinit RenderMethod g_RenderMethod;
+extern constinit ShadingMethod g_ShadingMethod;
 
 bool InitializeWindow(const std::string_view windowTitle);
 void DrawGrid();
@@ -64,4 +72,5 @@ void DrawLine(const int x0, const int y0, const int x1, const int y1, const u32 
 void TakeScreenshot(SDL_Renderer* renderer, const std::string_view fileNamePrefix);
 void RenderColorBuffer();
 void ClearColorBuffer(const u32 color);
+void ClearZBuffer();
 void DestroyWindow();

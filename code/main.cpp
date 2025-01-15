@@ -39,9 +39,14 @@ static void Setup()
     g_ShadingMethod = ShadingMethod::FlatShading;
 
     // NOTE(sbalse): Allocate the color buffer.
-    const size_t size = sizeof(u32) * g_WindowWidth * g_WindowHeight;
-    g_ColorBuffer.m_Buffer = reinterpret_cast<u32*>(std::malloc(size));
-    g_ColorBuffer.m_Size = size;
+    const size_t colorBufferSize = sizeof(u32) * g_WindowWidth * g_WindowHeight;
+    g_ColorBuffer.m_Buffer = reinterpret_cast<u32*>(std::malloc(colorBufferSize));
+    g_ColorBuffer.m_Size = colorBufferSize;
+
+    // NOTE(sbalse): Allocate the z buffer.
+    const size_t zBufferUNormSize = sizeof(float) * g_WindowWidth * g_WindowWidth;
+    g_ZBuffer.m_Buffer = reinterpret_cast<float*>(std::malloc(zBufferUNormSize));
+    g_ZBuffer.m_Size = zBufferUNormSize;
 
     g_ColorBuffer.m_Texture = SDL_CreateTexture(
         g_Renderer,
@@ -60,8 +65,8 @@ static void Setup()
     // NOTE(sbalse): Load the cube values in the mesh data structure.
     // LoadCubeMeshData();
 
-    LoadObjFileData("assets/crab.obj");
-    LoadPNGTextureData("assets/crab.png");
+    LoadObjFileData("assets/f117.obj");
+    LoadPNGTextureData("assets/f117.png");
 
     g_TrianglesToRender.reserve(g_Mesh.m_Faces.size());
 }
@@ -208,8 +213,8 @@ static void Update()
 
     if (!g_Paused)
     {
-        // g_Mesh.m_Rotation.m_X += 0.01f;
-        g_Mesh.m_Rotation.m_Y += 0.01f;
+        g_Mesh.m_Rotation.m_X += 0.01f;
+        // g_Mesh.m_Rotation.m_Y += 0.01f;
         // g_Mesh.m_Rotation.m_Z += 0.01f;
 
         // g_Mesh.m_Scale.m_X += 0.002;
@@ -391,6 +396,7 @@ static void Update()
 static void Render()
 {
     ClearColorBuffer(BLACK);
+    ClearZBuffer();
 
     if (g_DisplayGrid)
     {
@@ -500,8 +506,12 @@ static void Render()
 static void FreeResources()
 {
     std::free(g_ColorBuffer.m_Buffer);
-    g_ColorBuffer = {};
     SDL_DestroyTexture(g_ColorBuffer.m_Texture);
+    g_ColorBuffer = {};
+
+    std::free(g_ZBuffer.m_Buffer);
+    g_ZBuffer = {};
+
     upng_free(g_PNGTexture);
 }
 

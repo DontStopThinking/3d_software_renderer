@@ -385,7 +385,7 @@ void DrawTexel(
     const float reciprocalWGammaPointC = gamma / pointC.m_W;
 
     // NOTE(sbalse): Interpolate the reciprocal of W.
-    const float interpolatedReciprocalW =
+    float interpolatedReciprocalW =
         reciprocalWAlphaOfPointA
         + reciprocalWBetaOfPointB
         + reciprocalWGammaPointC;
@@ -410,7 +410,20 @@ void DrawTexel(
     const int texelX = std::abs(static_cast<int>(interpolatedU * g_TextureWidth) % g_TextureWidth);
     const int texelY = std::abs(static_cast<int>(interpolatedV * g_TextureHeight) % g_TextureHeight);
 
-    // NOTE(sbalse): Draw the corresponding color from our texture.
-    const u32 color = texture[(g_TextureWidth * texelY) + texelX];
-    DrawPixel(x, y, color);
+    // NOTE(sbalse): Adjust 1/w so that pixels closer to the camera have smaller values of
+    // interpolated reciprocal W.
+    interpolatedReciprocalW = 1.0f - interpolatedReciprocalW;
+
+    // NOTE(sbalse): Only draw the pixel if the depth value is less than the one previously stored
+    // in the z-buffer.
+    const u32 zBufferPos = (g_WindowWidth * y) + x;
+    if (interpolatedReciprocalW < g_ZBuffer.m_Buffer[zBufferPos])
+    {
+        // NOTE(sbalse): Draw the corresponding color from our texture.
+        const u32 color = texture[(g_TextureWidth * texelY) + texelX];
+        DrawPixel(x, y, color);
+
+        // NOTE(sbalse): Update the z-buffer value with the 1/w of this current pixel.
+        g_ZBuffer.m_Buffer[zBufferPos] = interpolatedReciprocalW;
+    }
 }

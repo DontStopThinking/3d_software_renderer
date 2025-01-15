@@ -1,6 +1,5 @@
 #include "display.h"
 
-#include <cstdio>
 #include <cstdlib>
 #include <ctime>
 #include <cmath>
@@ -10,6 +9,11 @@
 constinit SDL_Window* g_Window = nullptr;
 constinit SDL_Renderer* g_Renderer = nullptr;
 constinit ColorBuffer g_ColorBuffer = {};
+constinit ZBuffer g_ZBuffer = {};
+constinit CullMethod g_CullMethod = {};
+constinit RenderMethod g_RenderMethod = {};
+constinit ShadingMethod g_ShadingMethod = {};
+
 constinit int g_WindowWidth = 1024;
 constinit int g_WindowHeight = 720;
 
@@ -80,6 +84,21 @@ void ClearColorBuffer(const u32 color)
         {
             const int pixelIndex = (g_WindowWidth * row) + col;
             g_ColorBuffer.m_Buffer[pixelIndex] = color;
+        }
+    }
+}
+
+void ClearZBuffer()
+{
+    for (int row = 0; row < g_WindowHeight; row++)
+    {
+        for (int col = 0; col < g_WindowWidth; col++)
+        {
+            const int pixelIndex = (g_WindowWidth * row) + col;
+            // NOTE(sbalse): Clear z-buffer to "1". "0" is the near plane and "1" is the far plane.
+            // So z-buffer being 1 after clearing means that it is infinitely far away right by
+            // default.
+            g_ZBuffer.m_Buffer[pixelIndex] = 1.0;
         }
     }
 }
