@@ -64,6 +64,7 @@ extern constinit ZBuffer g_ZBuffer;
 extern constinit int g_WindowWidth;
 extern constinit int g_WindowHeight;
 
+// TODO(sbalse): IMGUI
 extern constinit CullMethod g_CullMethod;
 extern constinit RenderMethod g_RenderMethod;
 extern constinit ShadingMethod g_ShadingMethod;

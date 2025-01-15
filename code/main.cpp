@@ -25,6 +25,7 @@ constexpr Vec3 CAMERA_POSITION = { .m_X = 0, .m_Y = 0, .m_Z = 0 };
 
 constinit std::vector<Triangle> g_TrianglesToRender;
 
+// TODO(sbalse): IMGUI
 constinit bool g_Paused = false;
 constinit bool g_PrintFPS = false;
 constinit bool g_DisplayGrid = false;
