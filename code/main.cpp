@@ -330,12 +330,6 @@ static void Update()
             projectedPoints[vertexIndex].m_Y += (g_WindowHeight / 2.0f);
         }
 
-        // NOTE(sbalse): Calculate the average depth for each face based on the vertices after
-        // transformation.
-        const float avgDepth = (transformedVertices[0].m_Z
-                                + transformedVertices[1].m_Z
-                                + transformedVertices[2].m_Z) / 3.0f;
-
         u32 triangleColor = meshFace.m_Color;
 
         if (g_ShadingMethod == ShadingMethod::FlatShading)
@@ -378,19 +372,11 @@ static void Update()
                 { meshFace.m_CUV },
             },
             .m_Color = triangleColor,
-            .m_AvgDepth = avgDepth,
         };
 
         // NOTE(sbalse): Save the projected triangle in the array of triangles to render.
         g_TrianglesToRender.emplace_back(projectedTriangle);
     }
-
-    // NOTE(sbalse): Sort the triangles in descending order of their avg depth. This is to ensure
-    // that the faces get rendered in the correct order.
-    std::sort(
-        std::begin(g_TrianglesToRender),
-        std::end(g_TrianglesToRender),
-        [](const Triangle& t1, const Triangle& t2) -> bool { return t1.m_AvgDepth > t2.m_AvgDepth; });
 }
 
 static void Render()
@@ -414,12 +400,18 @@ static void Render()
                 // NOTE(sbalse): vertex A.
                 static_cast<int>(currentTriangle.m_Points[0].m_X),
                 static_cast<int>(currentTriangle.m_Points[0].m_Y),
+                currentTriangle.m_Points[0].m_Z,
+                currentTriangle.m_Points[0].m_W,
                 // NOTE(sbalse): vertex B.
                 static_cast<int>(currentTriangle.m_Points[1].m_X),
                 static_cast<int>(currentTriangle.m_Points[1].m_Y),
+                currentTriangle.m_Points[1].m_Z,
+                currentTriangle.m_Points[1].m_W,
                 // NOTE(sbalse): vertex C.
                 static_cast<int>(currentTriangle.m_Points[2].m_X),
                 static_cast<int>(currentTriangle.m_Points[2].m_Y),
+                currentTriangle.m_Points[2].m_Z,
+                currentTriangle.m_Points[2].m_W,
                 // NOTE(sbalse): The color.
                 currentTriangle.m_Color);
         }
