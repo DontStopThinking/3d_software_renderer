@@ -19,7 +19,7 @@ extern "C"
 #include "texture.h"
 
 constinit bool g_IsRunning = false;
-constinit u32 g_PreviousFrameTimeMS = 0u; // NOTE(sbalse): Time taken by the previous frame in milliseconds.
+constinit u32 g_PreviousUpdateTimeMS = 0u; // NOTE(sbalse): Time taken by the previous update in milliseconds.
 
 constexpr Vec3 CAMERA_POSITION = { .m_X = 0, .m_Y = 0, .m_Z = 0 };
 
@@ -65,8 +65,8 @@ static void Setup()
     // NOTE(sbalse): Load the cube values in the mesh data structure.
     // LoadCubeMeshData();
 
-    LoadObjFileData("assets/f117.obj");
-    LoadPNGTextureData("assets/f117.png");
+    LoadObjFileData("assets/drone.obj");
+    LoadPNGTextureData("assets/drone.png");
 
     g_TrianglesToRender.reserve(g_Mesh.m_Faces.size());
 }
@@ -201,9 +201,9 @@ static void ProcessInput()
 
 static void Update()
 {
-    const u32 currentFrameTimeMS = SDL_GetTicks();
-    const u32 frameDuration = currentFrameTimeMS - g_PreviousFrameTimeMS;
-    g_PreviousFrameTimeMS = currentFrameTimeMS;
+    const u32 currentUpdateTimeMS = SDL_GetTicks();
+    const u32 frameDuration = currentUpdateTimeMS - g_PreviousUpdateTimeMS;
+    g_PreviousUpdateTimeMS = currentUpdateTimeMS;
 
     const int timeToWait = static_cast<int>(FRAME_TARGET_TIME_MS) - frameDuration;
     if (timeToWait > 0 && timeToWait <= FRAME_TARGET_TIME_MS)
@@ -213,8 +213,8 @@ static void Update()
 
     if (!g_Paused)
     {
-        g_Mesh.m_Rotation.m_X += 0.01f;
-        // g_Mesh.m_Rotation.m_Y += 0.01f;
+        // g_Mesh.m_Rotation.m_X += 0.01f;
+        g_Mesh.m_Rotation.m_Y += 0.01f;
         // g_Mesh.m_Rotation.m_Z += 0.01f;
 
         // g_Mesh.m_Scale.m_X += 0.002;
