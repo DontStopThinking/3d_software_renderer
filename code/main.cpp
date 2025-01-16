@@ -34,7 +34,6 @@ constinit Mat4 g_WorldMatrix = {};
 constinit Mat4 g_ProjMatrix = {};
 constinit Mat4 g_ViewMatrix = {};
 
-constexpr Vec3 CAMERA_TARGET = { 0, 0, 4 };
 constexpr Vec3 CAMERA_UP_DIRECTION = { 0, 1, 0 };
 
 static void Setup()
@@ -213,17 +212,51 @@ static void ProcessInput()
                 g_RenderMethod = RenderMethod::WireTextured;
                 LOG_INFO("Set render method to \"WireTextured\".");
             }
-            // NOTE(sbalse): c to enable backface culling.
+            // NOTE(sbalse): c to toggle backface culling.
             else if (event.key.keysym.sym == SDLK_c)
             {
-                g_CullMethod = CullMethod::Backface;
-                LOG_INFO("Set cull method to \"Backface\".");
+                if (g_CullMethod == CullMethod::Backface)
+                {
+                    g_CullMethod = CullMethod::None;
+                    LOG_INFO("Set cull method to \"None\".");
+                }
+                else
+                {
+                    g_CullMethod = CullMethod::Backface;
+                    LOG_INFO("Set cull method to \"Backface\".");
+                }
             }
-            // NOTE(sbalse): d to disable backface culling.
+            // NOTE(sbalse): Up arrow to move camera up vertically.
+            else if (event.key.keysym.sym == SDLK_UP)
+            {
+                g_Camera.m_Position.m_Y += 3.0f * g_DeltaTimeSeconds;
+            }
+            // NOTE(sbalse): Down arrow to move camera down vertically.
+            else if (event.key.keysym.sym == SDLK_DOWN)
+            {
+                g_Camera.m_Position.m_Y -= 3.0f * g_DeltaTimeSeconds;
+            }
+            // NOTE(sbalse): a to rotate camera to the left.
+            else if (event.key.keysym.sym == SDLK_a)
+            {
+                g_Camera.m_Yaw -= 1.0f * g_DeltaTimeSeconds;
+            }
+            // NOTE(sbalse): d to rotate camera to the right.
             else if (event.key.keysym.sym == SDLK_d)
             {
-                g_CullMethod = CullMethod::None;
-                LOG_INFO("Set cull method to \"None\".");
+                g_Camera.m_Yaw += 1.0f * g_DeltaTimeSeconds;
+            }
+            // NOTE(sbalse): w to move camera forward.
+            else if (event.key.keysym.sym == SDLK_w)
+            {
+                g_Camera.m_ForwardVelocity = Vec3Mul(g_Camera.m_Direction, 5.0f * g_DeltaTimeSeconds);
+                g_Camera.m_Position = Vec3Add(g_Camera.m_Position, g_Camera.m_ForwardVelocity);
+            }
+            // NOTE(sbalse): s to move camera backward.
+            else if (event.key.keysym.sym == SDLK_s)
+            {
+                g_Camera.m_ForwardVelocity = Vec3Mul(g_Camera.m_Direction, 5.0f * g_DeltaTimeSeconds);
+                g_Camera.m_Position = Vec3Sub(g_Camera.m_Position, g_Camera.m_ForwardVelocity);
             }
         } break;
         }
@@ -246,9 +279,9 @@ static void Update()
 
     if (!g_Paused)
     {
-        g_Mesh.m_Rotation.m_X += 0.6f * g_DeltaTimeSeconds;
-        g_Mesh.m_Rotation.m_Y += 0.6f * g_DeltaTimeSeconds;
-        g_Mesh.m_Rotation.m_Z += 0.6f * g_DeltaTimeSeconds;
+        // g_Mesh.m_Rotation.m_X += 0.6f * g_DeltaTimeSeconds;
+        // g_Mesh.m_Rotation.m_Y += 0.6f * g_DeltaTimeSeconds;
+        // g_Mesh.m_Rotation.m_Z += 0.6f * g_DeltaTimeSeconds;
 
         // g_Mesh.m_Scale.m_X += 0.2 * g_DeltaTimeSeconds;
         // g_Mesh.m_Scale.m_Y += 0.2 * g_DeltaTimeSeconds;
@@ -287,8 +320,16 @@ static void Update()
     g_WorldMatrix = Mat4MulMat4(rotationMatrixZ, g_WorldMatrix);
     g_WorldMatrix = Mat4MulMat4(translationMatrix, g_WorldMatrix);
 
-    // NOTE(sbalse): Create the camera view matrix looking at a hardcoded target point.
-    g_ViewMatrix = Mat4LookAt(g_Camera.m_Position, CAMERA_TARGET, CAMERA_UP_DIRECTION);
+    // NOTE(sbalse): Initialize the camera target looking at the positive z-axis.
+    Vec3 cameraTarget = { 0, 0, 1 };
+    const Mat4 cameraYawRotation = Mat4MakeRotationY(g_Camera.m_Yaw);
+    g_Camera.m_Direction = Vec3FromVec4(Mat4MulVec4(cameraYawRotation, Vec4FromVec3(cameraTarget)));
+
+    // NOTE(sbalse): Offset the camera position in the direction where the camera is pointing at.
+    cameraTarget = Vec3Add(g_Camera.m_Position, g_Camera.m_Direction);
+
+    // NOTE(sbalse): Create the view matrix.
+    g_ViewMatrix = Mat4LookAt(g_Camera.m_Position, cameraTarget, CAMERA_UP_DIRECTION);
 
     // NOTE(sbalse): Loop all faces of our mesh.
     for (const Face& meshFace : g_Mesh.m_Faces)

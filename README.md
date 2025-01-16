@@ -27,5 +27,6 @@ Following the following steps to build and run the project:
 - `6` to disable shading.
 - `7` to display textured.
 - `8` to display textured and wireframe.
-- `d` to disable backface culling.
-- `c` to enable backface culling.
+- `c` to toggle backface culling.
+- `WASD` - Basic FPS camera movement.
+- `up/down arrows`- Move camera up/down vertically.
