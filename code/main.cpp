@@ -21,6 +21,7 @@ extern "C"
 
 constinit bool g_IsRunning = false;
 constinit u32 g_PreviousUpdateTimeMS = 0u; // NOTE(sbalse): Time taken by the previous update in milliseconds.
+constinit float g_DeltaTimeSeconds = 0.0f;
 
 constinit std::vector<Triangle> g_TrianglesToRender;
 
@@ -233,6 +234,8 @@ static void Update()
 {
     const u32 currentUpdateTimeMS = SDL_GetTicks();
     const u32 frameDuration = currentUpdateTimeMS - g_PreviousUpdateTimeMS;
+
+    g_DeltaTimeSeconds = frameDuration / 1000.0f;
     g_PreviousUpdateTimeMS = currentUpdateTimeMS;
 
     const int timeToWait = static_cast<int>(FRAME_TARGET_TIME_MS) - frameDuration;
@@ -243,22 +246,22 @@ static void Update()
 
     if (!g_Paused)
     {
-        // g_Mesh.m_Rotation.m_X += 0.01f;
-        // g_Mesh.m_Rotation.m_Y += 0.01f;
-        // g_Mesh.m_Rotation.m_Z += 0.01f;
+        g_Mesh.m_Rotation.m_X += 0.6f * g_DeltaTimeSeconds;
+        g_Mesh.m_Rotation.m_Y += 0.6f * g_DeltaTimeSeconds;
+        g_Mesh.m_Rotation.m_Z += 0.6f * g_DeltaTimeSeconds;
 
-        // g_Mesh.m_Scale.m_X += 0.002;
-        // g_Mesh.m_Scale.m_Y += 0.002;
-        // g_Mesh.m_Scale.m_Z += 0.002;
+        // g_Mesh.m_Scale.m_X += 0.2 * g_DeltaTimeSeconds;
+        // g_Mesh.m_Scale.m_Y += 0.2 * g_DeltaTimeSeconds;
+        // g_Mesh.m_Scale.m_Z += 0.2 * g_DeltaTimeSeconds;
 
-        // g_Mesh.m_Translation.m_X += 0.01;
+        // g_Mesh.m_Translation.m_X += 0.6 * g_DeltaTimeSeconds;
 
         // NOTE(sbalse): Move away from the camera.
-        g_Mesh.m_Translation.m_Z = CAMERA_TARGET.m_Z;
+        g_Mesh.m_Translation.m_Z = 5.0f;
 
         // NOTE(sbalse): Change the camera position per animation frame.
-        g_Camera.m_Position.m_X += 0.008;
-        g_Camera.m_Position.m_Y += 0.008;
+        // g_Camera.m_Position.m_X += 0.6f * g_DeltaTimeSeconds;
+        // g_Camera.m_Position.m_Y += 0.6f * g_DeltaTimeSeconds;
     }
 
     // NOTE(sbalse): Create scale, translation, and rotation matrices that will be
