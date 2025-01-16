@@ -56,7 +56,7 @@ static void Setup()
     g_ZBuffer.m_BufferUNorm = reinterpret_cast<float*>(std::malloc(zBufferUNormSize));
     g_ZBuffer.m_BufferUNormSize = zBufferUNormSize;
 
-    const size_t zBufferUIntSize = sizeof(float) * g_WindowWidth * g_WindowHeight;
+    const size_t zBufferUIntSize = sizeof(u32) * g_WindowWidth * g_WindowHeight;
     g_ZBuffer.m_BufferUInt = reinterpret_cast<u32*>(std::malloc(zBufferUIntSize));
     g_ZBuffer.m_BufferUIntSize = zBufferUIntSize;
 
