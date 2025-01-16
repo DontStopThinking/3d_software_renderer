@@ -9,6 +9,9 @@
     <ClCompile Include="..\..\code\matrix.cpp" />
     <ClCompile Include="..\..\code\light.cpp" />
     <ClCompile Include="..\..\code\texture.cpp" />
+    <ClCompile Include="..\..\extern\upng-master\upng.c">
+      <Filter>extern\upng</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\code\common.h" />
@@ -21,5 +24,16 @@
     <ClInclude Include="..\..\code\matrix.h" />
     <ClInclude Include="..\..\code\light.h" />
     <ClInclude Include="..\..\code\texture.h" />
+    <ClInclude Include="..\..\extern\upng-master\upng.h">
+      <Filter>extern\upng</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="extern">
+      <UniqueIdentifier>{ce00acc9-ca5b-45b7-aeaa-80c372d1571a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="extern\upng">
+      <UniqueIdentifier>{4510ff3e-a339-4e65-bcd8-697eba907d03}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
 </Project>
