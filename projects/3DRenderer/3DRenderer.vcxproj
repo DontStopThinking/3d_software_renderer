@@ -11,6 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\code\camera.cpp" />
     <ClCompile Include="..\..\code\display.cpp" />
     <ClCompile Include="..\..\code\light.cpp" />
     <ClCompile Include="..\..\code\main.cpp" />
@@ -22,6 +23,7 @@
     <ClCompile Include="..\..\extern\upng-master\upng.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\code\camera.h" />
     <ClInclude Include="..\..\code\colorlibrary.h" />
     <ClInclude Include="..\..\code\common.h" />
     <ClInclude Include="..\..\code\display.h" />

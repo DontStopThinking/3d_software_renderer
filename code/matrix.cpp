@@ -163,3 +163,30 @@ Vec4 Mat4MulVec4Project(const Mat4 matProj, const Vec4 v)
 
     return result;
 }
+
+Mat4 Mat4LookAt(const Vec3 eye, const Vec3 target, const Vec3 up)
+{
+    // NOTE(sbalse): Compute the forward (z), right (x) and up (y) vectors.
+    Vec3 z = Vec3Sub(target, eye);
+    Vec3Normalize(&z);
+    Vec3 x = Vec3Cross(up, z);
+    Vec3Normalize(&x);
+    Vec3 y = Vec3Cross(z, x);
+
+    // | x.x  x.y  x.z  -dot(x, eye) |
+    // | y.x  y.y  y.z  -dot(y, eye) |
+    // | z.x  z.y  z.z  -dot(z, eye) |
+    // |   0    0    0             1 |
+    const Mat4 result = // NOTE(sbalse): The result view matrix.
+    {
+        .m_Values =
+        {
+            { x.m_X, x.m_Y, x.m_Z, -Vec3Dot(x, eye) },
+            { y.m_X, y.m_Y, y.m_Z, -Vec3Dot(y, eye) },
+            { z.m_X, z.m_Y, z.m_Z, -Vec3Dot(z, eye) },
+            { 0, 0, 0, 1 },
+        },
+    };
+
+    return result;
+}

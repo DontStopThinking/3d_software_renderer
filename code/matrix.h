@@ -28,8 +28,13 @@ Mat4 Mat4MakeRotationX(const float angle);
 Mat4 Mat4MakeRotationY(const float angle);
 Mat4 Mat4MakeRotationZ(const float angle);
 Mat4 Mat4MakePerspective(const float fov, const float aspect, const float znear, const float zfar);
-// NOTE(sbalse): Multiply the projection matrix `matProj` with the Vector `v` and also perform
-// perspective divide on the result.
+// NOTE(sbalse): Multiply the projection matrix `matProj` with the Vector `v` and also
+// perform perspective divide on the result.
 Vec4 Mat4MulVec4Project(const Mat4 matProj, const Vec4 v);
-
 // TODO(sbalse): Orthographic projection.
+
+// NOTE(sbalse):
+// eye = Camera position.
+// target = What should the camera look at.
+// up = What is "up" for the camera.
+Mat4 Mat4LookAt(const Vec3 eye, const Vec3 target, const Vec3 up);

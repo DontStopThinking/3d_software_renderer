@@ -17,11 +17,10 @@ extern "C"
 #include "mesh.h"
 #include "light.h"
 #include "texture.h"
+#include "camera.h"
 
 constinit bool g_IsRunning = false;
 constinit u32 g_PreviousUpdateTimeMS = 0u; // NOTE(sbalse): Time taken by the previous update in milliseconds.
-
-constexpr Vec3 CAMERA_POSITION = { .m_X = 0, .m_Y = 0, .m_Z = 0 };
 
 constinit std::vector<Triangle> g_TrianglesToRender;
 
@@ -30,7 +29,12 @@ constinit bool g_Paused = false;
 constinit bool g_PrintFPS = false;
 constinit bool g_DisplayGrid = false;
 
+constinit Mat4 g_WorldMatrix = {};
 constinit Mat4 g_ProjMatrix = {};
+constinit Mat4 g_ViewMatrix = {};
+
+constexpr Vec3 CAMERA_TARGET = { 0, 0, 4 };
+constexpr Vec3 CAMERA_UP_DIRECTION = { 0, 1, 0 };
 
 static void Setup()
 {
@@ -78,8 +82,8 @@ static void Setup()
     // NOTE(sbalse): Load the cube values in the mesh data structure.
     // LoadCubeMeshData();
 
-    LoadObjFileData("assets/drone.obj");
-    LoadPNGTextureData("assets/drone.png");
+    LoadObjFileData("assets/efa.obj");
+    LoadPNGTextureData("assets/efa.png");
 
     g_TrianglesToRender.reserve(g_Mesh.m_Faces.size());
 }
@@ -240,7 +244,7 @@ static void Update()
     if (!g_Paused)
     {
         // g_Mesh.m_Rotation.m_X += 0.01f;
-        g_Mesh.m_Rotation.m_Y += 0.01f;
+        // g_Mesh.m_Rotation.m_Y += 0.01f;
         // g_Mesh.m_Rotation.m_Z += 0.01f;
 
         // g_Mesh.m_Scale.m_X += 0.002;
@@ -250,11 +254,15 @@ static void Update()
         // g_Mesh.m_Translation.m_X += 0.01;
 
         // NOTE(sbalse): Move away from the camera.
-        g_Mesh.m_Translation.m_Z = 5.0f;
+        g_Mesh.m_Translation.m_Z = CAMERA_TARGET.m_Z;
+
+        // NOTE(sbalse): Change the camera position per animation frame.
+        g_Camera.m_Position.m_X += 0.008;
+        g_Camera.m_Position.m_Y += 0.008;
     }
 
-    // NOTE(sbalse): Create scale, translation, and rotation matrices that will be multiplied with
-    // our mesh vertices.
+    // NOTE(sbalse): Create scale, translation, and rotation matrices that will be
+    // multiplied with our mesh vertices.
     const Mat4 scaleMatrix = Mat4MakeScale(
         g_Mesh.m_Scale.m_X,
         g_Mesh.m_Scale.m_Y,
@@ -269,12 +277,15 @@ static void Update()
 
     // NOTE(sbalse): Create a "World Matrix" combining scale, rotation and translation
     // matrices of the mesh.
-    Mat4 worldMatrix = MAT4_IDENTITY;
-    worldMatrix = Mat4MulMat4(scaleMatrix, worldMatrix);
-    worldMatrix = Mat4MulMat4(rotationMatrixX, worldMatrix);
-    worldMatrix = Mat4MulMat4(rotationMatrixY, worldMatrix);
-    worldMatrix = Mat4MulMat4(rotationMatrixZ, worldMatrix);
-    worldMatrix = Mat4MulMat4(translationMatrix, worldMatrix);
+    g_WorldMatrix = MAT4_IDENTITY;
+    g_WorldMatrix = Mat4MulMat4(scaleMatrix, g_WorldMatrix);
+    g_WorldMatrix = Mat4MulMat4(rotationMatrixX, g_WorldMatrix);
+    g_WorldMatrix = Mat4MulMat4(rotationMatrixY, g_WorldMatrix);
+    g_WorldMatrix = Mat4MulMat4(rotationMatrixZ, g_WorldMatrix);
+    g_WorldMatrix = Mat4MulMat4(translationMatrix, g_WorldMatrix);
+
+    // NOTE(sbalse): Create the camera view matrix looking at a hardcoded target point.
+    g_ViewMatrix = Mat4LookAt(g_Camera.m_Position, CAMERA_TARGET, CAMERA_UP_DIRECTION);
 
     // NOTE(sbalse): Loop all faces of our mesh.
     for (const Face& meshFace : g_Mesh.m_Faces)
@@ -295,7 +306,11 @@ static void Update()
             Vec4 transformedVertex = Vec4FromVec3(faceVertices[vertexIndex]);
 
             // NOTE(sbalse): Transform our vertex by multiplying it with our world matrix.
-            transformedVertex = Mat4MulVec4(worldMatrix, transformedVertex);
+            transformedVertex = Mat4MulVec4(g_WorldMatrix, transformedVertex);
+
+            // NOTE(sbalse): Multiply the view matrix by the original vector to transform
+            // our scene to camera space.
+            transformedVertex = Mat4MulVec4(g_ViewMatrix, transformedVertex);
 
             // NOTE(sbalse): Save the transformed vertex.
             transformedVertices[vertexIndex] = transformedVertex;
@@ -317,7 +332,9 @@ static void Update()
         Vec3Normalize(&normal);
 
         // NOTE(sbalse): Find the vector between a point in the triangle and the camera origin.
-        const Vec3 cameraRay = Vec3Sub(CAMERA_POSITION, vectorA);
+        // We directly use ORIGIN here [i.e. (0, 0, 0)] since our camera is always meant to be the
+        // origin of our world.
+        const Vec3 cameraRay = Vec3Sub(ORIGIN, vectorA);
 
         // NOTE(sbalse): Use dot product to calculate how aligned the face normal is with the camera
         // ray.

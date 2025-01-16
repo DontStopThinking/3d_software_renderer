@@ -12,6 +12,7 @@
     <ClCompile Include="..\..\extern\upng-master\upng.c">
       <Filter>extern\upng</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\code\camera.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\code\common.h" />
@@ -27,6 +28,7 @@
     <ClInclude Include="..\..\extern\upng-master\upng.h">
       <Filter>extern\upng</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\code\camera.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="extern">
