@@ -21,7 +21,7 @@ struct Vec4
     float m_W;
 };
 
-inline constexpr Vec3 ORIGIN = {};
+inline constexpr Vec3 ORIGIN = { 0, 0, 0 };
 
 // TODO(sbalse): Since I'm using C++, could use operator overloading for vector operations?
 

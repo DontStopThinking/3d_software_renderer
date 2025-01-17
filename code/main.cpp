@@ -18,23 +18,25 @@ extern "C"
 #include "light.h"
 #include "texture.h"
 #include "camera.h"
+#include "clipping.h"
 
-constinit bool g_IsRunning = false;
-constinit u32 g_PreviousUpdateTimeMS = 0u; // NOTE(sbalse): Time taken by the previous update in milliseconds.
-constinit float g_DeltaTimeSeconds = 0.0f;
+// NOTE(sbalse): "fs_" prefix = file static variables.
+static constinit bool fs_IsRunning = false;
+static constinit u32 fs_PreviousUpdateTimeMS = 0u; // NOTE(sbalse): Time taken by the previous update in milliseconds.
+static constinit float fs_DeltaTimeSeconds = 0.0f;
 
-constinit std::vector<Triangle> g_TrianglesToRender;
+static constinit std::vector<Triangle> fs_TrianglesToRender;
 
 // TODO(sbalse): IMGUI
-constinit bool g_Paused = false;
-constinit bool g_PrintFPS = false;
-constinit bool g_DisplayGrid = false;
+static constinit bool fs_Paused = false;
+static constinit bool fs_PrintFPS = false;
+static constinit bool fs_DisplayGrid = false;
 
-constinit Mat4 g_WorldMatrix = {};
-constinit Mat4 g_ProjMatrix = {};
-constinit Mat4 g_ViewMatrix = {};
+static constinit Mat4 fs_WorldMatrix = {};
+static constinit Mat4 fs_ProjMatrix = {};
+static constinit Mat4 fs_ViewMatrix = {};
 
-constexpr Vec3 CAMERA_UP_DIRECTION = { 0, 1, 0 };
+inline constexpr Vec3 CAMERA_UP_DIRECTION = { 0, 1, 0 };
 
 static void Setup()
 {
@@ -73,11 +75,14 @@ static void Setup()
     );
 
     // NOTE(sbalse): Init the perspective projection matrix.
-    constexpr float fovRadians = M_PI / 3.0f; // NOTE(sbalse): Same as 180 / 3 or 60 deg.
+    constexpr float FOV_RADIANS = M_PI / 3.0f; // NOTE(sbalse): Same as 180 / 3 or 60 deg.
     const float aspect = static_cast<float>(g_WindowHeight) / g_WindowWidth;
-    constexpr float znear = 0.1f;
-    constexpr float zfar = 100.0f;
-    g_ProjMatrix = Mat4MakePerspective(fovRadians, aspect, znear, zfar);
+    constexpr float Z_NEAR = 0.1f;
+    constexpr float Z_FAR = 100.0f;
+    fs_ProjMatrix = Mat4MakePerspective(FOV_RADIANS, aspect, Z_NEAR, Z_FAR);
+
+    // NOTE(sbalse): Initialize clipping frustum planes with a point and a normal.
+    InitFrustumPlanes(FOV_RADIANS, Z_NEAR, Z_FAR);
 
     // NOTE(sbalse): Load the cube values in the mesh data structure.
     // LoadCubeMeshData();
@@ -85,7 +90,7 @@ static void Setup()
     LoadObjFileData("assets/efa.obj");
     LoadPNGTextureData("assets/efa.png");
 
-    g_TrianglesToRender.reserve(g_Mesh.m_Faces.size());
+    fs_TrianglesToRender.reserve(g_Mesh.m_Faces.size());
 }
 
 static void ProcessInput()
@@ -98,7 +103,7 @@ static void ProcessInput()
         {
         case SDL_QUIT:
         {
-            g_IsRunning = false;
+            fs_IsRunning = false;
         } break;
 
         case SDL_KEYDOWN:
@@ -106,7 +111,7 @@ static void ProcessInput()
             // NOTE(sbalse): ESCAPE to quit.
             if (event.key.keysym.sym == SDLK_ESCAPE)
             {
-                g_IsRunning = false;
+                fs_IsRunning = false;
             }
             // NOTE(sbalse): F9 to take a screenshot.
             else if (event.key.keysym.sym == SDLK_F9)
@@ -116,8 +121,8 @@ static void ProcessInput()
             // NOTE(sbalse): p to pause mesh rotation.
             else if (event.key.keysym.sym == SDLK_p)
             {
-                g_Paused = !g_Paused;
-                if (g_Paused)
+                fs_Paused = !fs_Paused;
+                if (fs_Paused)
                 {
                     LOG_INFO("Paused: true.");
                 }
@@ -129,8 +134,8 @@ static void ProcessInput()
             // NOTE(sbalse): f to toggle printing of FPS.
             else if (event.key.keysym.sym == SDLK_f)
             {
-                g_PrintFPS = !g_PrintFPS;
-                if (g_PrintFPS)
+                fs_PrintFPS = !fs_PrintFPS;
+                if (fs_PrintFPS)
                 {
                     LOG_INFO("Printing FPS.");
                 }
@@ -141,8 +146,8 @@ static void ProcessInput()
             }
             else if (event.key.keysym.sym == SDLK_g)
             {
-                g_DisplayGrid = !g_DisplayGrid;
-                if (g_DisplayGrid)
+                fs_DisplayGrid = !fs_DisplayGrid;
+                if (fs_DisplayGrid)
                 {
                     LOG_INFO("Displaying grid.");
                 }
@@ -229,33 +234,33 @@ static void ProcessInput()
             // NOTE(sbalse): Up arrow to move camera up vertically.
             else if (event.key.keysym.sym == SDLK_UP)
             {
-                g_Camera.m_Position.m_Y += 3.0f * g_DeltaTimeSeconds;
+                g_Camera.m_Position.m_Y += 3.0f * fs_DeltaTimeSeconds;
             }
             // NOTE(sbalse): Down arrow to move camera down vertically.
             else if (event.key.keysym.sym == SDLK_DOWN)
             {
-                g_Camera.m_Position.m_Y -= 3.0f * g_DeltaTimeSeconds;
+                g_Camera.m_Position.m_Y -= 3.0f * fs_DeltaTimeSeconds;
             }
             // NOTE(sbalse): a to rotate camera to the left.
             else if (event.key.keysym.sym == SDLK_a)
             {
-                g_Camera.m_Yaw -= 1.0f * g_DeltaTimeSeconds;
+                g_Camera.m_Yaw -= 1.0f * fs_DeltaTimeSeconds;
             }
             // NOTE(sbalse): d to rotate camera to the right.
             else if (event.key.keysym.sym == SDLK_d)
             {
-                g_Camera.m_Yaw += 1.0f * g_DeltaTimeSeconds;
+                g_Camera.m_Yaw += 1.0f * fs_DeltaTimeSeconds;
             }
             // NOTE(sbalse): w to move camera forward.
             else if (event.key.keysym.sym == SDLK_w)
             {
-                g_Camera.m_ForwardVelocity = Vec3Mul(g_Camera.m_Direction, 5.0f * g_DeltaTimeSeconds);
+                g_Camera.m_ForwardVelocity = Vec3Mul(g_Camera.m_Direction, 5.0f * fs_DeltaTimeSeconds);
                 g_Camera.m_Position = Vec3Add(g_Camera.m_Position, g_Camera.m_ForwardVelocity);
             }
             // NOTE(sbalse): s to move camera backward.
             else if (event.key.keysym.sym == SDLK_s)
             {
-                g_Camera.m_ForwardVelocity = Vec3Mul(g_Camera.m_Direction, 5.0f * g_DeltaTimeSeconds);
+                g_Camera.m_ForwardVelocity = Vec3Mul(g_Camera.m_Direction, 5.0f * fs_DeltaTimeSeconds);
                 g_Camera.m_Position = Vec3Sub(g_Camera.m_Position, g_Camera.m_ForwardVelocity);
             }
         } break;
@@ -266,10 +271,10 @@ static void ProcessInput()
 static void Update()
 {
     const u32 currentUpdateTimeMS = SDL_GetTicks();
-    const u32 frameDuration = currentUpdateTimeMS - g_PreviousUpdateTimeMS;
+    const u32 frameDuration = currentUpdateTimeMS - fs_PreviousUpdateTimeMS;
 
-    g_DeltaTimeSeconds = frameDuration / 1000.0f;
-    g_PreviousUpdateTimeMS = currentUpdateTimeMS;
+    fs_DeltaTimeSeconds = frameDuration / 1000.0f;
+    fs_PreviousUpdateTimeMS = currentUpdateTimeMS;
 
     const int timeToWait = static_cast<int>(FRAME_TARGET_TIME_MS) - frameDuration;
     if (timeToWait > 0 && timeToWait <= FRAME_TARGET_TIME_MS)
@@ -277,24 +282,24 @@ static void Update()
         SDL_Delay(timeToWait);
     }
 
-    if (!g_Paused)
+    if (!fs_Paused)
     {
-        // g_Mesh.m_Rotation.m_X += 0.6f * g_DeltaTimeSeconds;
-        // g_Mesh.m_Rotation.m_Y += 0.6f * g_DeltaTimeSeconds;
-        // g_Mesh.m_Rotation.m_Z += 0.6f * g_DeltaTimeSeconds;
+        // g_Mesh.m_Rotation.m_X += 0.6f * fs_DeltaTimeSeconds;
+        // g_Mesh.m_Rotation.m_Y += 0.6f * fs_DeltaTimeSeconds;
+        // g_Mesh.m_Rotation.m_Z += 0.6f * fs_DeltaTimeSeconds;
 
-        // g_Mesh.m_Scale.m_X += 0.2 * g_DeltaTimeSeconds;
-        // g_Mesh.m_Scale.m_Y += 0.2 * g_DeltaTimeSeconds;
-        // g_Mesh.m_Scale.m_Z += 0.2 * g_DeltaTimeSeconds;
+        // g_Mesh.m_Scale.m_X += 0.2 * fs_DeltaTimeSeconds;
+        // g_Mesh.m_Scale.m_Y += 0.2 * fs_DeltaTimeSeconds;
+        // g_Mesh.m_Scale.m_Z += 0.2 * fs_DeltaTimeSeconds;
 
-        // g_Mesh.m_Translation.m_X += 0.6 * g_DeltaTimeSeconds;
+        // g_Mesh.m_Translation.m_X += 0.6 * fs_DeltaTimeSeconds;
 
         // NOTE(sbalse): Move away from the camera.
         g_Mesh.m_Translation.m_Z = 5.0f;
 
         // NOTE(sbalse): Change the camera position per animation frame.
-        // g_Camera.m_Position.m_X += 0.6f * g_DeltaTimeSeconds;
-        // g_Camera.m_Position.m_Y += 0.6f * g_DeltaTimeSeconds;
+        // g_Camera.m_Position.m_X += 0.6f * fs_DeltaTimeSeconds;
+        // g_Camera.m_Position.m_Y += 0.6f * fs_DeltaTimeSeconds;
     }
 
     // NOTE(sbalse): Create scale, translation, and rotation matrices that will be
@@ -313,12 +318,12 @@ static void Update()
 
     // NOTE(sbalse): Create a "World Matrix" combining scale, rotation and translation
     // matrices of the mesh.
-    g_WorldMatrix = MAT4_IDENTITY;
-    g_WorldMatrix = Mat4MulMat4(scaleMatrix, g_WorldMatrix);
-    g_WorldMatrix = Mat4MulMat4(rotationMatrixX, g_WorldMatrix);
-    g_WorldMatrix = Mat4MulMat4(rotationMatrixY, g_WorldMatrix);
-    g_WorldMatrix = Mat4MulMat4(rotationMatrixZ, g_WorldMatrix);
-    g_WorldMatrix = Mat4MulMat4(translationMatrix, g_WorldMatrix);
+    fs_WorldMatrix = MAT4_IDENTITY;
+    fs_WorldMatrix = Mat4MulMat4(scaleMatrix, fs_WorldMatrix);
+    fs_WorldMatrix = Mat4MulMat4(rotationMatrixX, fs_WorldMatrix);
+    fs_WorldMatrix = Mat4MulMat4(rotationMatrixY, fs_WorldMatrix);
+    fs_WorldMatrix = Mat4MulMat4(rotationMatrixZ, fs_WorldMatrix);
+    fs_WorldMatrix = Mat4MulMat4(translationMatrix, fs_WorldMatrix);
 
     // NOTE(sbalse): Initialize the camera target looking at the positive z-axis.
     Vec3 cameraTarget = { 0, 0, 1 };
@@ -329,7 +334,7 @@ static void Update()
     cameraTarget = Vec3Add(g_Camera.m_Position, g_Camera.m_Direction);
 
     // NOTE(sbalse): Create the view matrix.
-    g_ViewMatrix = Mat4LookAt(g_Camera.m_Position, cameraTarget, CAMERA_UP_DIRECTION);
+    fs_ViewMatrix = Mat4LookAt(g_Camera.m_Position, cameraTarget, CAMERA_UP_DIRECTION);
 
     // NOTE(sbalse): Loop all faces of our mesh.
     for (const Face& meshFace : g_Mesh.m_Faces)
@@ -350,11 +355,11 @@ static void Update()
             Vec4 transformedVertex = Vec4FromVec3(faceVertices[vertexIndex]);
 
             // NOTE(sbalse): Transform our vertex by multiplying it with our world matrix.
-            transformedVertex = Mat4MulVec4(g_WorldMatrix, transformedVertex);
+            transformedVertex = Mat4MulVec4(fs_WorldMatrix, transformedVertex);
 
             // NOTE(sbalse): Multiply the view matrix by the original vector to transform
             // our scene to camera space.
-            transformedVertex = Mat4MulVec4(g_ViewMatrix, transformedVertex);
+            transformedVertex = Mat4MulVec4(fs_ViewMatrix, transformedVertex);
 
             // NOTE(sbalse): Save the transformed vertex.
             transformedVertices[vertexIndex] = transformedVertex;
@@ -402,7 +407,7 @@ static void Update()
         {
             // NOTE(sbalse): Project the current vertex.
             projectedPoints[vertexIndex] = Mat4MulVec4Project(
-                g_ProjMatrix,
+                fs_ProjMatrix,
                 transformedVertices[vertexIndex]);
 
             // NOTE(sbalse): Invert the y values to account for our flipped y axis.
@@ -462,7 +467,7 @@ static void Update()
         };
 
         // NOTE(sbalse): Save the projected triangle in the array of triangles to render.
-        g_TrianglesToRender.emplace_back(projectedTriangle);
+        fs_TrianglesToRender.emplace_back(projectedTriangle);
     }
 }
 
@@ -471,13 +476,13 @@ static void Render()
     ClearColorBuffer(BLACK);
     ClearZBuffer();
 
-    if (g_DisplayGrid)
+    if (fs_DisplayGrid)
     {
         DrawGrid();
     }
 
     // NOTE(sbalse): Loop all projected triangles and render them.
-    for (const Triangle& currentTriangle : g_TrianglesToRender)
+    for (const Triangle& currentTriangle : fs_TrianglesToRender)
     {
         if (g_RenderMethod == RenderMethod::FillTriangle
             || g_RenderMethod == RenderMethod::FillTriangleWire)
@@ -574,7 +579,7 @@ static void Render()
     }
 
     // NOTE(sbalse): Clear the list of triangles to render every frame loop.
-    g_TrianglesToRender.clear();
+    fs_TrianglesToRender.clear();
 
     if (g_RenderBufferMethod == RenderBufferMethod::ColorBuffer)
     {
@@ -611,9 +616,9 @@ int main(int argc, char* argv[])
     const std::string_view windowTitle = "3D Renderer [RELEASE]";
 #endif // _DEBUG
 
-    g_IsRunning = InitializeWindow(windowTitle);
+    fs_IsRunning = InitializeWindow(windowTitle);
 
-    if (!g_IsRunning)
+    if (!fs_IsRunning)
     {
         return EXIT_FAILURE;
     }
@@ -624,7 +629,7 @@ int main(int argc, char* argv[])
     u32 printTime = prevTime;
     int numFrames = 0;
 
-    while (g_IsRunning)
+    while (fs_IsRunning)
     {
         const u32 currTime = SDL_GetTicks();
 
@@ -635,7 +640,7 @@ int main(int argc, char* argv[])
         Render();
 
         // NOTE(sbalse): Print the FPS and average frame time.
-        if (g_PrintFPS)
+        if (fs_PrintFPS)
         {
             numFrames += 1;
             if (currTime - printTime >= 1000) // NOTE(sbalse): If at least 1 second has elapsed.
