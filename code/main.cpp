@@ -42,7 +42,7 @@ static void Setup()
 {
     // NOTE(sbalse): Init the render mode, triangle culling method and shading method.
     g_CullMethod = CullMethod::Backface;
-    g_RenderMethod = RenderMethod::Textured;
+    g_RenderMethod = RenderMethod::Wire;
     g_ShadingMethod = ShadingMethod::FlatShading;
 
     // NOTE(sbalse): Allocate the color buffer.
@@ -87,8 +87,8 @@ static void Setup()
     // NOTE(sbalse): Load the cube values in the mesh data structure.
     // LoadCubeMeshData();
 
-    LoadObjFileData("assets/efa.obj");
-    LoadPNGTextureData("assets/efa.png");
+    LoadObjFileData("assets/cube.obj");
+    LoadPNGTextureData("assets/cube.png");
 
     fs_TrianglesToRender.reserve(g_Mesh.m_Faces.size());
 }
@@ -337,8 +337,16 @@ static void Update()
     fs_ViewMatrix = Mat4LookAt(g_Camera.m_Position, cameraTarget, CAMERA_UP_DIRECTION);
 
     // NOTE(sbalse): Loop all faces of our mesh.
-    for (const Face& meshFace : g_Mesh.m_Faces)
+    for (int temp = 0; temp < g_Mesh.m_Faces.size(); temp++ /*const Face& meshFace : g_Mesh.m_Faces*/)
     {
+        if (temp != 4)
+        {
+            continue;
+        }
+        temp++;
+
+        const Face& meshFace = g_Mesh.m_Faces[temp];
+
         // NOTE(sbalse): The 3 vertices that make up a triangle of a face.
         const Vec3 faceVertices[3] =
         {
@@ -399,6 +407,21 @@ static void Update()
                 continue;
             }
         }
+
+        // NOTE(sbalse): Do clipping before projecting the vertices.
+        // NOTE(sbalse): Create a polygon to be clipped from the original transformed vertices.
+        Polygon polygon = CreatePolygonFromTriangle(
+            Vec3FromVec4(transformedVertices[0]),
+            Vec3FromVec4(transformedVertices[1]),
+            Vec3FromVec4(transformedVertices[2])
+        );
+
+        // NOTE(sbalse): Clip the polygon and get a new polygon with potentially new vertices.
+        ClipPolygon(&polygon);
+
+        LOG_INFO("Num of polygon vertices after clipping: %d", polygon.m_NumVertices);
+
+        // TODO(sbalse): After clipping, we need to break the polygon back into triangles.
 
         Vec4 projectedPoints[3] = {};
 
