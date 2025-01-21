@@ -84,14 +84,16 @@ static void DrawTrianglePixel(
 
     // NOTE(sbalse): Only draw the pixel if the depth value is less than the one previously stored
     // in the z-buffer.
-    const u32 zBufferPos = (g_WindowWidth * y) + x;
-    if (interpolatedReciprocalW < g_ZBuffer.m_BufferUNorm[zBufferPos])
+    const size_t zBufferPos = static_cast<size_t>(g_WindowWidth * y) + x;
+    if (zBufferPos <= g_ZBuffer.m_BufferUNormSize
+        && interpolatedReciprocalW < g_ZBuffer.m_BufferUNorm[zBufferPos])
     {
         DrawPixel(x, y, color);
 
         g_ZBuffer.m_BufferUNorm[zBufferPos] = interpolatedReciprocalW;
 
-        if (g_RenderBufferMethod == RenderBufferMethod::ZBuffer)
+        if (g_RenderBufferMethod == RenderBufferMethod::ZBuffer
+            && zBufferPos <= g_ZBuffer.m_BufferUIntSize)
         {
             const u8 grayscale = static_cast<u8>(interpolatedReciprocalW * 255.0f);
             const u32 zcolor = (grayscale << 16) | (grayscale << 8) | grayscale;

@@ -10,6 +10,11 @@ static constinit Plane fs_FrustumPlanes[NUM_PLANES] = {};
 
 static void ClipPolygonAgainstPlane(Polygon* const polygon, const FrustumPlane plane)
 {
+    if (polygon->m_NumVertices <= 0)
+    {
+        return;
+    }
+
     const Vec3 planePoint = fs_FrustumPlanes[plane].m_Point;
     const Vec3 planeNormal = fs_FrustumPlanes[plane].m_Normal;
 
@@ -93,30 +98,34 @@ Right plane   : P=(0, 0, 0), N=(-cos(fov/2), 0, sin(fov/2))
          \  | |
            \|/
 */
-void InitFrustumPlanes(const float fov, const float znear, const float zfar)
+void InitFrustumPlanes(const float fovX, const float fovY, const float znear, const float zfar)
 {
-    const float cosHalfFov = std::cosf(fov / 2.0f);
-    const float sinHalfFov = std::sinf(fov / 2.0f);
+    const float cosHalfFovX = std::cosf(fovX / 2.0f);
+    const float sinHalfFovX = std::sinf(fovX / 2.0f);
+    const float cosHalfFovY = std::cosf(fovY / 2.0f);
+    const float sinHalfFovY = std::sinf(fovY / 2.0f);
 
+    // NOTE(sbalse): Use X FOV for the left and right planes.
     fs_FrustumPlanes[FrustumPlane_Left] =
     {
         .m_Point = ORIGIN,
-        .m_Normal = { .m_X = cosHalfFov, .m_Y = 0, .m_Z = sinHalfFov },
+        .m_Normal = { .m_X = cosHalfFovX, .m_Y = 0, .m_Z = sinHalfFovX },
     };
     fs_FrustumPlanes[FrustumPlane_Right] =
     {
         .m_Point = ORIGIN,
-        .m_Normal = { .m_X = -cosHalfFov, .m_Y = 0, .m_Z = sinHalfFov },
+        .m_Normal = { .m_X = -cosHalfFovX, .m_Y = 0, .m_Z = sinHalfFovX },
     };
+    // NOTE(sbalse): Use Y FOV for the top and bottom planes.
     fs_FrustumPlanes[FrustumPlane_Top] =
     {
         .m_Point = ORIGIN,
-        .m_Normal = { .m_X = 0, .m_Y = -cosHalfFov, .m_Z = sinHalfFov },
+        .m_Normal = { .m_X = 0, .m_Y = -cosHalfFovY, .m_Z = sinHalfFovY },
     };
     fs_FrustumPlanes[FrustumPlane_Bottom] =
     {
         .m_Point = ORIGIN,
-        .m_Normal = { .m_X = 0, .m_Y = cosHalfFov, .m_Z = sinHalfFov },
+        .m_Normal = { .m_X = 0, .m_Y = cosHalfFovY, .m_Z = sinHalfFovY },
     };
     fs_FrustumPlanes[FrustumPlane_Near] =
     {

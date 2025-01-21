@@ -33,7 +33,7 @@ struct Polygon
 // fov = fov of view that we're using.
 // znear = value of the Z-Near plane.
 // zfar = value of the Z-Far plane.
-void InitFrustumPlanes(const float fov, const float znear, const float zfar);
+void InitFrustumPlanes(const float fovX, const float fovY, const float znear, const float zfar);
 Polygon CreatePolygonFromTriangle(const Vec3 v0, const Vec3 v1, const Vec3 v2);
 void TrianglesFromPolygon(
     const Polygon* const polygon,

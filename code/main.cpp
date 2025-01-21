@@ -1,5 +1,6 @@
 #include <cstdio>
 #include <cstdlib>
+#include <cmath>
 #include <string_view>
 #include <vector>
 #include <SDL.h>
@@ -46,8 +47,8 @@ static void Setup()
     g_ShadingMethod = ShadingMethod::FlatShading;
 
     // NOTE(sbalse): Allocate the color buffer.
-    const size_t colorBufferSize = sizeof(u32) * g_WindowWidth * g_WindowHeight;
-    g_ColorBuffer.m_Buffer = reinterpret_cast<u32*>(std::malloc(colorBufferSize));
+    const size_t colorBufferSize = g_WindowWidth * g_WindowHeight;
+    g_ColorBuffer.m_Buffer = reinterpret_cast<u32*>(std::calloc(colorBufferSize, sizeof(u32)));
     g_ColorBuffer.m_Size = colorBufferSize;
 
     g_ColorBuffer.m_Texture = SDL_CreateTexture(
@@ -58,12 +59,12 @@ static void Setup()
         g_WindowHeight);
 
     // NOTE(sbalse): Allocate the z buffer.
-    const size_t zBufferUNormSize = sizeof(float) * g_WindowWidth * g_WindowHeight;
-    g_ZBuffer.m_BufferUNorm = reinterpret_cast<float*>(std::malloc(zBufferUNormSize));
+    const size_t zBufferUNormSize = g_WindowWidth * g_WindowHeight;
+    g_ZBuffer.m_BufferUNorm = reinterpret_cast<float*>(std::calloc(zBufferUNormSize, sizeof(float)));
     g_ZBuffer.m_BufferUNormSize = zBufferUNormSize;
 
-    const size_t zBufferUIntSize = sizeof(u32) * g_WindowWidth * g_WindowHeight;
-    g_ZBuffer.m_BufferUInt = reinterpret_cast<u32*>(std::malloc(zBufferUIntSize));
+    const size_t zBufferUIntSize = g_WindowWidth * g_WindowHeight;
+    g_ZBuffer.m_BufferUInt = reinterpret_cast<u32*>(std::calloc(zBufferUIntSize, sizeof(u32)));
     g_ZBuffer.m_BufferUIntSize = zBufferUIntSize;
 
     g_ZBuffer.m_Texture = SDL_CreateTexture(
@@ -75,14 +76,16 @@ static void Setup()
     );
 
     // NOTE(sbalse): Init the perspective projection matrix.
-    constexpr float FOV_RADIANS = M_PI / 3.0f; // NOTE(sbalse): Same as 180 / 3 or 60 deg.
-    const float aspect = static_cast<float>(g_WindowHeight) / g_WindowWidth;
+    const float aspectX = static_cast<float>(g_WindowWidth) / static_cast<float>(g_WindowHeight);
+    const float aspectY = static_cast<float>(g_WindowHeight) / static_cast<float>(g_WindowWidth);
+    constexpr float FOV_Y_RADIANS = M_PI / 3.0f; // NOTE(sbalse): Vertical FOV. Same as 180 / 3 or 60 deg.
+    const float fovXRadians = std::atanf(std::tanf(FOV_Y_RADIANS / 2.0f)* aspectX) * 2.0f;
     constexpr float Z_NEAR = 0.1f;
     constexpr float Z_FAR = 100.0f;
-    fs_ProjMatrix = Mat4MakePerspective(FOV_RADIANS, aspect, Z_NEAR, Z_FAR);
+    fs_ProjMatrix = Mat4MakePerspective(FOV_Y_RADIANS, aspectY, Z_NEAR, Z_FAR);
 
     // NOTE(sbalse): Initialize clipping frustum planes with a point and a normal.
-    InitFrustumPlanes(FOV_RADIANS, Z_NEAR, Z_FAR);
+    InitFrustumPlanes(fovXRadians, FOV_Y_RADIANS, Z_NEAR, Z_FAR);
 
     // NOTE(sbalse): Load the cube values in the mesh data structure.
     // LoadCubeMeshData();
