@@ -1,6 +1,7 @@
 #pragma once
 #include "common.h"
 #include "vector.h"
+#include "triangle.h"
 
 enum FrustumPlane
 {
@@ -20,6 +21,8 @@ struct Plane
 };
 
 inline constexpr u32 MAX_NUM_POLYGON_VERTICES = 10;
+inline constexpr u32 MAX_NUM_POLYGON_TRIANGLES = 10; // NOTE(sbalse): Max triangles a clipped polygon contains.
+
 struct Polygon
 {
     Vec3 m_Vertices[MAX_NUM_POLYGON_VERTICES];
@@ -32,4 +35,8 @@ struct Polygon
 // zfar = value of the Z-Far plane.
 void InitFrustumPlanes(const float fov, const float znear, const float zfar);
 Polygon CreatePolygonFromTriangle(const Vec3 v0, const Vec3 v1, const Vec3 v2);
+void TrianglesFromPolygon(
+    const Polygon* const polygon,
+    Triangle triangles[],
+    int* numTriangles);
 void ClipPolygon(Polygon* const polygon);

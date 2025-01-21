@@ -2,7 +2,6 @@
 #include <cstdlib>
 #include <string_view>
 #include <vector>
-#include <algorithm>
 #include <SDL.h>
 extern "C"
 {
@@ -19,6 +18,7 @@ extern "C"
 #include "texture.h"
 #include "camera.h"
 #include "clipping.h"
+#include "triangle.h"
 
 // NOTE(sbalse): "fs_" prefix = file static variables.
 static constinit bool fs_IsRunning = false;
@@ -337,16 +337,8 @@ static void Update()
     fs_ViewMatrix = Mat4LookAt(g_Camera.m_Position, cameraTarget, CAMERA_UP_DIRECTION);
 
     // NOTE(sbalse): Loop all faces of our mesh.
-    for (int temp = 0; temp < g_Mesh.m_Faces.size(); temp++ /*const Face& meshFace : g_Mesh.m_Faces*/)
+    for (const Face& meshFace : g_Mesh.m_Faces)
     {
-        if (temp != 4)
-        {
-            continue;
-        }
-        temp++;
-
-        const Face& meshFace = g_Mesh.m_Faces[temp];
-
         // NOTE(sbalse): The 3 vertices that make up a triangle of a face.
         const Vec3 faceVertices[3] =
         {
@@ -419,78 +411,86 @@ static void Update()
         // NOTE(sbalse): Clip the polygon and get a new polygon with potentially new vertices.
         ClipPolygon(&polygon);
 
-        LOG_INFO("Num of polygon vertices after clipping: %d", polygon.m_NumVertices);
+        Triangle trianglesAfterClipping[MAX_NUM_POLYGON_TRIANGLES] = {};
+        int numTrianglesAfterClipping = 0;
 
-        // TODO(sbalse): After clipping, we need to break the polygon back into triangles.
+        // NOTE(sbalse): After clipping, we need to break the clipping polygon back into triangles.
+        TrianglesFromPolygon(&polygon, trianglesAfterClipping, &numTrianglesAfterClipping);
 
-        Vec4 projectedPoints[3] = {};
-
-        // NOTE(sbalse): Project vertices of the face.
-        for (int vertexIndex = 0; vertexIndex < 3; vertexIndex++)
+        // NOTE(sbalse): Loop all the assembled triangles after clipping.
+        for (int t = 0; t < numTrianglesAfterClipping; t++)
         {
-            // NOTE(sbalse): Project the current vertex.
-            projectedPoints[vertexIndex] = Mat4MulVec4Project(
-                fs_ProjMatrix,
-                transformedVertices[vertexIndex]);
+            const Triangle triangleAfterClipping = trianglesAfterClipping[t];
 
-            // NOTE(sbalse): Invert the y values to account for our flipped y axis.
-            projectedPoints[vertexIndex].m_Y *= -1;
+            Vec4 projectedPoints[3] = {};
 
-            // NOTE(sbalse): Scale into the view.
-            projectedPoints[vertexIndex].m_X *= (g_WindowWidth / 2.0f);
-            projectedPoints[vertexIndex].m_Y *= (g_WindowHeight / 2.0f);
-
-            // NOTE(sbalse): Translate the projected point to the middle of the screen.
-            projectedPoints[vertexIndex].m_X += (g_WindowWidth / 2.0f);
-            projectedPoints[vertexIndex].m_Y += (g_WindowHeight / 2.0f);
-        }
-
-        u32 triangleColor = meshFace.m_Color;
-
-        if (g_ShadingMethod == ShadingMethod::FlatShading)
-        {
-            // NOTE(sbalse): Calculate the shade intensity based on how aligned is the face normal and
-            // the inverse of the light ray.
-            const float lightIntensityFactor = -Vec3Dot(normal, g_Light.m_Direction);
-
-            // NOTE(sbalse): Calculate triangle color based on the light angle.
-            triangleColor = LightApplyIntensity(meshFace.m_Color, lightIntensityFactor);
-        }
-
-        const Triangle projectedTriangle =
-        {
-            .m_Points =
+            // NOTE(sbalse): Project vertices of the face.
+            for (int vertexIndex = 0; vertexIndex < 3; vertexIndex++)
             {
-                {
-                    projectedPoints[0].m_X,
-                    projectedPoints[0].m_Y,
-                    projectedPoints[0].m_Z,
-                    projectedPoints[0].m_W
-                },
-                {
-                    projectedPoints[1].m_X,
-                    projectedPoints[1].m_Y,
-                    projectedPoints[1].m_Z,
-                    projectedPoints[1].m_W
-                },
-                {
-                    projectedPoints[2].m_X,
-                    projectedPoints[2].m_Y,
-                    projectedPoints[2].m_Z,
-                    projectedPoints[2].m_W
-                },
-            },
-            .m_TexCoords =
-            {
-                { meshFace.m_AUV },
-                { meshFace.m_BUV },
-                { meshFace.m_CUV },
-            },
-            .m_Color = triangleColor,
-        };
+                // NOTE(sbalse): Project the current vertex.
+                projectedPoints[vertexIndex] = Mat4MulVec4Project(
+                    fs_ProjMatrix,
+                    triangleAfterClipping.m_Points[vertexIndex]);
 
-        // NOTE(sbalse): Save the projected triangle in the array of triangles to render.
-        fs_TrianglesToRender.emplace_back(projectedTriangle);
+                // NOTE(sbalse): Invert the y values to account for our flipped y axis.
+                projectedPoints[vertexIndex].m_Y *= -1;
+
+                // NOTE(sbalse): Scale into the view.
+                projectedPoints[vertexIndex].m_X *= (g_WindowWidth / 2.0f);
+                projectedPoints[vertexIndex].m_Y *= (g_WindowHeight / 2.0f);
+
+                // NOTE(sbalse): Translate the projected point to the middle of the screen.
+                projectedPoints[vertexIndex].m_X += (g_WindowWidth / 2.0f);
+                projectedPoints[vertexIndex].m_Y += (g_WindowHeight / 2.0f);
+            }
+
+            u32 triangleColor = meshFace.m_Color;
+
+            if (g_ShadingMethod == ShadingMethod::FlatShading)
+            {
+                // NOTE(sbalse): Calculate the shade intensity based on how aligned is the face normal and
+                // the inverse of the light ray.
+                const float lightIntensityFactor = -Vec3Dot(normal, g_Light.m_Direction);
+
+                // NOTE(sbalse): Calculate triangle color based on the light angle.
+                triangleColor = LightApplyIntensity(meshFace.m_Color, lightIntensityFactor);
+            }
+
+            const Triangle triangleToRender =
+            {
+                .m_Points =
+                {
+                    {
+                        projectedPoints[0].m_X,
+                        projectedPoints[0].m_Y,
+                        projectedPoints[0].m_Z,
+                        projectedPoints[0].m_W
+                    },
+                    {
+                        projectedPoints[1].m_X,
+                        projectedPoints[1].m_Y,
+                        projectedPoints[1].m_Z,
+                        projectedPoints[1].m_W
+                    },
+                    {
+                        projectedPoints[2].m_X,
+                        projectedPoints[2].m_Y,
+                        projectedPoints[2].m_Z,
+                        projectedPoints[2].m_W
+                    },
+                },
+                .m_TexCoords =
+                {
+                    { meshFace.m_AUV },
+                    { meshFace.m_BUV },
+                    { meshFace.m_CUV },
+                },
+                .m_Color = triangleColor,
+            };
+
+            // NOTE(sbalse): Save the projected triangle in the array of triangles to render.
+            fs_TrianglesToRender.emplace_back(triangleToRender);
+        }
     }
 }
 

@@ -141,6 +141,25 @@ Polygon CreatePolygonFromTriangle(const Vec3 v0, const Vec3 v1, const Vec3 v2)
     return result;
 }
 
+void TrianglesFromPolygon(
+    const Polygon* const polygon,
+    Triangle triangles[],
+    int* numTriangles)
+{
+    *numTriangles = polygon->m_NumVertices - 2;
+    for (int i = 0; i < *numTriangles; i++)
+    {
+        // NOTE(sbalse): Create three vertices of the destination triangle.
+        const int index0 = 0;
+        const int index1 = i + 1;
+        const int index2 = i + 2;
+
+        triangles[i].m_Points[0] = Vec4FromVec3(polygon->m_Vertices[index0]);
+        triangles[i].m_Points[1] = Vec4FromVec3(polygon->m_Vertices[index1]);
+        triangles[i].m_Points[2] = Vec4FromVec3(polygon->m_Vertices[index2]);
+    }
+}
+
 void ClipPolygon(Polygon* const polygon)
 {
     ClipPolygonAgainstPlane(polygon, FrustumPlane_Left);
