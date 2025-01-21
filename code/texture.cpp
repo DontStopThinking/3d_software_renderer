@@ -30,7 +30,7 @@ void LoadPNGTextureData(const std::string_view fileName)
         return;
     }
 
-    g_MeshTexture = reinterpret_cast<const u32*>(upng_get_buffer(g_PNGTexture));
+    g_MeshTexture = rcast<const u32*>(upng_get_buffer(g_PNGTexture));
     g_TextureWidth = upng_get_width(g_PNGTexture);
     g_TextureHeight = upng_get_height(g_PNGTexture);
 }

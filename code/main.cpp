@@ -48,7 +48,7 @@ static void Setup()
 
     // NOTE(sbalse): Allocate the color buffer.
     const size_t colorBufferSize = g_WindowWidth * g_WindowHeight;
-    g_ColorBuffer.m_Buffer = reinterpret_cast<u32*>(std::calloc(colorBufferSize, sizeof(u32)));
+    g_ColorBuffer.m_Buffer = rcast<u32*>(std::calloc(colorBufferSize, sizeof(u32)));
     g_ColorBuffer.m_Size = colorBufferSize;
 
     g_ColorBuffer.m_Texture = SDL_CreateTexture(
@@ -60,11 +60,11 @@ static void Setup()
 
     // NOTE(sbalse): Allocate the z buffer.
     const size_t zBufferUNormSize = g_WindowWidth * g_WindowHeight;
-    g_ZBuffer.m_BufferUNorm = reinterpret_cast<float*>(std::calloc(zBufferUNormSize, sizeof(float)));
+    g_ZBuffer.m_BufferUNorm = rcast<float*>(std::calloc(zBufferUNormSize, sizeof(float)));
     g_ZBuffer.m_BufferUNormSize = zBufferUNormSize;
 
     const size_t zBufferUIntSize = g_WindowWidth * g_WindowHeight;
-    g_ZBuffer.m_BufferUInt = reinterpret_cast<u32*>(std::calloc(zBufferUIntSize, sizeof(u32)));
+    g_ZBuffer.m_BufferUInt = rcast<u32*>(std::calloc(zBufferUIntSize, sizeof(u32)));
     g_ZBuffer.m_BufferUIntSize = zBufferUIntSize;
 
     g_ZBuffer.m_Texture = SDL_CreateTexture(
@@ -76,8 +76,8 @@ static void Setup()
     );
 
     // NOTE(sbalse): Init the perspective projection matrix.
-    const float aspectX = static_cast<float>(g_WindowWidth) / static_cast<float>(g_WindowHeight);
-    const float aspectY = static_cast<float>(g_WindowHeight) / static_cast<float>(g_WindowWidth);
+    const float aspectX = scast<float>(g_WindowWidth) / scast<float>(g_WindowHeight);
+    const float aspectY = scast<float>(g_WindowHeight) / scast<float>(g_WindowWidth);
     constexpr float FOV_Y_RADIANS = M_PI / 3.0f; // NOTE(sbalse): Vertical FOV. Same as 180 / 3 or 60 deg.
     const float fovXRadians = std::atanf(std::tanf(FOV_Y_RADIANS / 2.0f)* aspectX) * 2.0f;
     constexpr float Z_NEAR = 0.1f;
@@ -279,7 +279,7 @@ static void Update()
     fs_DeltaTimeSeconds = frameDuration / 1000.0f;
     fs_PreviousUpdateTimeMS = currentUpdateTimeMS;
 
-    const int timeToWait = static_cast<int>(FRAME_TARGET_TIME_MS) - frameDuration;
+    const int timeToWait = scast<int>(FRAME_TARGET_TIME_MS) - frameDuration;
     if (timeToWait > 0 && timeToWait <= FRAME_TARGET_TIME_MS)
     {
         SDL_Delay(timeToWait);
@@ -516,18 +516,18 @@ static void Render()
             // NOTE(sbalse): Draw mesh face triangles.
             DrawFilledTriangle(
                 // NOTE(sbalse): vertex A.
-                static_cast<int>(currentTriangle.m_Points[0].m_X),
-                static_cast<int>(currentTriangle.m_Points[0].m_Y),
+                scast<int>(currentTriangle.m_Points[0].m_X),
+                scast<int>(currentTriangle.m_Points[0].m_Y),
                 currentTriangle.m_Points[0].m_Z,
                 currentTriangle.m_Points[0].m_W,
                 // NOTE(sbalse): vertex B.
-                static_cast<int>(currentTriangle.m_Points[1].m_X),
-                static_cast<int>(currentTriangle.m_Points[1].m_Y),
+                scast<int>(currentTriangle.m_Points[1].m_X),
+                scast<int>(currentTriangle.m_Points[1].m_Y),
                 currentTriangle.m_Points[1].m_Z,
                 currentTriangle.m_Points[1].m_W,
                 // NOTE(sbalse): vertex C.
-                static_cast<int>(currentTriangle.m_Points[2].m_X),
-                static_cast<int>(currentTriangle.m_Points[2].m_Y),
+                scast<int>(currentTriangle.m_Points[2].m_X),
+                scast<int>(currentTriangle.m_Points[2].m_Y),
                 currentTriangle.m_Points[2].m_Z,
                 currentTriangle.m_Points[2].m_W,
                 // NOTE(sbalse): The color.
@@ -538,20 +538,20 @@ static void Render()
         {
             // NOTE(sbalse): Draw the cube corner vertices.
             DrawRectangle(
-                static_cast<int>(currentTriangle.m_Points[0].m_X - 3),
-                static_cast<int>(currentTriangle.m_Points[0].m_Y - 3),
+                scast<int>(currentTriangle.m_Points[0].m_X - 3),
+                scast<int>(currentTriangle.m_Points[0].m_Y - 3),
                 6,
                 6,
                 RED);
             DrawRectangle(
-                static_cast<int>(currentTriangle.m_Points[1].m_X - 3),
-                static_cast<int>(currentTriangle.m_Points[1].m_Y - 3),
+                scast<int>(currentTriangle.m_Points[1].m_X - 3),
+                scast<int>(currentTriangle.m_Points[1].m_Y - 3),
                 6,
                 6,
                 RED);
             DrawRectangle(
-                static_cast<int>(currentTriangle.m_Points[2].m_X - 3),
-                static_cast<int>(currentTriangle.m_Points[2].m_Y - 3),
+                scast<int>(currentTriangle.m_Points[2].m_X - 3),
+                scast<int>(currentTriangle.m_Points[2].m_Y - 3),
                 6,
                 6,
                 RED);
@@ -563,22 +563,22 @@ static void Render()
         {
             DrawTexturedTriangle(
                 // NOTE(sbalse): vertex A.
-                static_cast<int>(currentTriangle.m_Points[0].m_X),
-                static_cast<int>(currentTriangle.m_Points[0].m_Y),
+                scast<int>(currentTriangle.m_Points[0].m_X),
+                scast<int>(currentTriangle.m_Points[0].m_Y),
                 currentTriangle.m_Points[0].m_Z,
                 currentTriangle.m_Points[0].m_W,
                 currentTriangle.m_TexCoords[0].m_U,
                 currentTriangle.m_TexCoords[0].m_V,
                 // NOTE(sbalse): vertex B.
-                static_cast<int>(currentTriangle.m_Points[1].m_X),
-                static_cast<int>(currentTriangle.m_Points[1].m_Y),
+                scast<int>(currentTriangle.m_Points[1].m_X),
+                scast<int>(currentTriangle.m_Points[1].m_Y),
                 currentTriangle.m_Points[1].m_Z,
                 currentTriangle.m_Points[1].m_W,
                 currentTriangle.m_TexCoords[1].m_U,
                 currentTriangle.m_TexCoords[1].m_V,
                 // NOTE(sbalse): vertex C.
-                static_cast<int>(currentTriangle.m_Points[2].m_X),
-                static_cast<int>(currentTriangle.m_Points[2].m_Y),
+                scast<int>(currentTriangle.m_Points[2].m_X),
+                scast<int>(currentTriangle.m_Points[2].m_Y),
                 currentTriangle.m_Points[2].m_Z,
                 currentTriangle.m_Points[2].m_W,
                 currentTriangle.m_TexCoords[2].m_U,
@@ -594,12 +594,12 @@ static void Render()
         {
             // NOTE(sbalse): Draw mesh wireframe triangles.
             DrawTriangle(
-                static_cast<int>(currentTriangle.m_Points[0].m_X),
-                static_cast<int>(currentTriangle.m_Points[0].m_Y),
-                static_cast<int>(currentTriangle.m_Points[1].m_X),
-                static_cast<int>(currentTriangle.m_Points[1].m_Y),
-                static_cast<int>(currentTriangle.m_Points[2].m_X),
-                static_cast<int>(currentTriangle.m_Points[2].m_Y),
+                scast<int>(currentTriangle.m_Points[0].m_X),
+                scast<int>(currentTriangle.m_Points[0].m_Y),
+                scast<int>(currentTriangle.m_Points[1].m_X),
+                scast<int>(currentTriangle.m_Points[1].m_Y),
+                scast<int>(currentTriangle.m_Points[2].m_X),
+                scast<int>(currentTriangle.m_Points[2].m_Y),
                 WHITE);
         }
     }
