@@ -2,6 +2,7 @@
 #include "common.h"
 #include "vector.h"
 #include "triangle.h"
+#include "texture.h"
 
 enum FrustumPlane
 {
@@ -25,8 +26,9 @@ inline constexpr u32 MAX_NUM_POLYGON_TRIANGLES = 10; // NOTE(sbalse): Max triang
 
 struct Polygon
 {
-    Vec3 m_Vertices[MAX_NUM_POLYGON_VERTICES];
-    u32 m_NumVertices;
+    Vec3 m_Vertices[MAX_NUM_POLYGON_VERTICES]; // NOTE(sbalse): The vertices of the polygon.
+    u32 m_NumVertices; // NOTE(sbalse): No. of vertices (less than or equal to MAX_NUM_POLYGON_VERTICES).
+    Tex2 m_TexCoords[MAX_NUM_POLYGON_VERTICES]; // NOTE(sbalse): The polygon texture UV coordinates.
 };
 
 // NOTE(sbalse): Initialize the frustum planes that are used for clipping.
@@ -34,9 +36,17 @@ struct Polygon
 // znear = value of the Z-Near plane.
 // zfar = value of the Z-Far plane.
 void InitFrustumPlanes(const float fovX, const float fovY, const float znear, const float zfar);
-Polygon CreatePolygonFromTriangle(const Vec3 v0, const Vec3 v1, const Vec3 v2);
+Polygon CreatePolygonFromTriangle(
+    const Vec3 v0,
+    const Vec3 v1,
+    const Vec3 v2,
+    const Tex2 t0,
+    const Tex2 t1,
+    const Tex2 t2
+);
 void TrianglesFromPolygon(
     const Polygon* const polygon,
     Triangle triangles[],
-    int* numTriangles);
+    int* numTriangles
+);
 void ClipPolygon(Polygon* const polygon);

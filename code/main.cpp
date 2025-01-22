@@ -2,7 +2,7 @@
 #include <cstdlib>
 #include <cmath>
 #include <string_view>
-#include <vector>
+#include <array>
 #include <SDL.h>
 extern "C"
 {
@@ -26,7 +26,9 @@ static constinit bool fs_IsRunning = false;
 static constinit u32 fs_PreviousUpdateTimeMS = 0u; // NOTE(sbalse): Time taken by the previous update in milliseconds.
 static constinit float fs_DeltaTimeSeconds = 0.0f;
 
-static constinit std::vector<Triangle> fs_TrianglesToRender;
+inline constexpr size_t MAX_NUM_TRIANGLES_TO_RENDER = 10000;
+static constinit size_t fs_NumTrianglesToRender = 0;
+static constinit std::array<Triangle, MAX_NUM_TRIANGLES_TO_RENDER> fs_TrianglesToRender = {};
 
 // TODO(sbalse): IMGUI
 static constinit bool fs_Paused = false;
@@ -79,9 +81,9 @@ static void Setup()
     const float aspectX = scast<float>(g_WindowWidth) / scast<float>(g_WindowHeight);
     const float aspectY = scast<float>(g_WindowHeight) / scast<float>(g_WindowWidth);
     constexpr float FOV_Y_RADIANS = M_PI / 3.0f; // NOTE(sbalse): Vertical FOV. Same as 180 / 3 or 60 deg.
-    const float fovXRadians = std::atanf(std::tanf(FOV_Y_RADIANS / 2.0f)* aspectX) * 2.0f;
-    constexpr float Z_NEAR = 0.1f;
-    constexpr float Z_FAR = 100.0f;
+    const float fovXRadians = std::atanf(std::tanf(FOV_Y_RADIANS / 2.0f) * aspectX) * 2.0f;
+    constexpr float Z_NEAR = 1.0f;
+    constexpr float Z_FAR = 20.0f;
     fs_ProjMatrix = Mat4MakePerspective(FOV_Y_RADIANS, aspectY, Z_NEAR, Z_FAR);
 
     // NOTE(sbalse): Initialize clipping frustum planes with a point and a normal.
@@ -90,10 +92,10 @@ static void Setup()
     // NOTE(sbalse): Load the cube values in the mesh data structure.
     // LoadCubeMeshData();
 
-    LoadObjFileData("assets/cube.obj");
-    LoadPNGTextureData("assets/cube.png");
+    LoadObjFileData("assets/f22.obj");
+    LoadPNGTextureData("assets/f22.png");
 
-    fs_TrianglesToRender.reserve(g_Mesh.m_Faces.size());
+    // fs_TrianglesToRender.reserve(MAX_NUM_TRIANGLES_TO_RENDER);
 }
 
 static void ProcessInput()
@@ -285,10 +287,12 @@ static void Update()
         SDL_Delay(timeToWait);
     }
 
+    fs_NumTrianglesToRender = 0;
+
     if (!fs_Paused)
     {
         // g_Mesh.m_Rotation.m_X += 0.6f * fs_DeltaTimeSeconds;
-        // g_Mesh.m_Rotation.m_Y += 0.6f * fs_DeltaTimeSeconds;
+        g_Mesh.m_Rotation.m_Y += 0.6f * fs_DeltaTimeSeconds;
         // g_Mesh.m_Rotation.m_Z += 0.6f * fs_DeltaTimeSeconds;
 
         // g_Mesh.m_Scale.m_X += 0.2 * fs_DeltaTimeSeconds;
@@ -408,7 +412,10 @@ static void Update()
         Polygon polygon = CreatePolygonFromTriangle(
             Vec3FromVec4(transformedVertices[0]),
             Vec3FromVec4(transformedVertices[1]),
-            Vec3FromVec4(transformedVertices[2])
+            Vec3FromVec4(transformedVertices[2]),
+            meshFace.m_AUV,
+            meshFace.m_BUV,
+            meshFace.m_CUV
         );
 
         // NOTE(sbalse): Clip the polygon and get a new polygon with potentially new vertices.
@@ -484,15 +491,18 @@ static void Update()
                 },
                 .m_TexCoords =
                 {
-                    { meshFace.m_AUV },
-                    { meshFace.m_BUV },
-                    { meshFace.m_CUV },
+                    { triangleAfterClipping.m_TexCoords[0] },
+                    { triangleAfterClipping.m_TexCoords[1] },
+                    { triangleAfterClipping.m_TexCoords[2] },
                 },
                 .m_Color = triangleColor,
             };
 
-            // NOTE(sbalse): Save the projected triangle in the array of triangles to render.
-            fs_TrianglesToRender.emplace_back(triangleToRender);
+            if (fs_NumTrianglesToRender < MAX_NUM_TRIANGLES_TO_RENDER)
+            {
+                // NOTE(sbalse): Save the projected triangle in the array of triangles to render.
+                fs_TrianglesToRender[fs_NumTrianglesToRender++] = triangleToRender;
+            }
         }
     }
 }
@@ -508,8 +518,10 @@ static void Render()
     }
 
     // NOTE(sbalse): Loop all projected triangles and render them.
-    for (const Triangle& currentTriangle : fs_TrianglesToRender)
+    for (int currentTriangleIndex = 0; currentTriangleIndex < fs_NumTrianglesToRender; currentTriangleIndex++)
     {
+        const Triangle& currentTriangle = fs_TrianglesToRender[currentTriangleIndex];
+
         if (g_RenderMethod == RenderMethod::FillTriangle
             || g_RenderMethod == RenderMethod::FillTriangleWire)
         {
@@ -605,7 +617,7 @@ static void Render()
     }
 
     // NOTE(sbalse): Clear the list of triangles to render every frame loop.
-    fs_TrianglesToRender.clear();
+    fs_TrianglesToRender = {};
 
     if (g_RenderBufferMethod == RenderBufferMethod::ColorBuffer)
     {

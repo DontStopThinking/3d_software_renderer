@@ -18,15 +18,21 @@ static void ClipPolygonAgainstPlane(Polygon* const polygon, const FrustumPlane p
     const Vec3 planePoint = fs_FrustumPlanes[plane].m_Point;
     const Vec3 planeNormal = fs_FrustumPlanes[plane].m_Normal;
 
-    // NOTE(sbalse): Declare a static array of inside vertices that will be our final destination polygon
-    // (returned in-place in the `polygon` param).
+    // NOTE(sbalse): Declare a static array of inside vertices and texture coordinates of those vertices that
+    // will be our final destination polygon (returned in-place using the `polygon` param).
     Vec3 insideVertices[MAX_NUM_POLYGON_VERTICES] = {};
+    Tex2 insideTexCoords[MAX_NUM_POLYGON_VERTICES] = {};
     int numInsideVertices = 0;
 
     // NOTE(sbalse): Start the current vertex with the first polygon vertex and the previous with the last
     // polygon vertex.
     const Vec3* currentVertex = &polygon->m_Vertices[0];
     const Vec3* previousVertex = &polygon->m_Vertices[polygon->m_NumVertices - 1];
+
+    // NOTE(sbalse): Start the current vertex texture coordinate with the first polygon vertex's texture
+    // coordinate and the previous with the last polygon vertex.
+    const Tex2* currentTexCoord = &polygon->m_TexCoords[0];
+    const Tex2* previousTexCoord = &polygon->m_TexCoords[polygon->m_NumVertices - 1];
 
     // NOTE(sbalse): DP = dot product.
     // This is the dot product of the plane normal with the vector between the plane point and the current
@@ -44,36 +50,57 @@ static void ClipPolygonAgainstPlane(Polygon* const polygon, const FrustumPlane p
         if (currentDP * previousDP < 0)
         {
             // NOTE(sbalse): We need to calculate the intersection point of the line with the plane. We do
-            // that using the interpolation formula: I = Q1 + t(Q2 - Q1).
+            // this by using linear interpolation formula: I = Q1 + t(Q2 - Q1).
             const float t = previousDP / (previousDP - currentDP);
 
-            // NOTE(sbalse): Calculate the intersection point using linear interpolation formula.
-            Vec3 intersectionPoint = Vec3Sub(*currentVertex, *previousVertex);
-            intersectionPoint = Vec3Mul(intersectionPoint, t);
-            intersectionPoint = Vec3Add(intersectionPoint, *previousVertex);
+            // NOTE(sbalse): Calculate the intersection vertex using linear interpolation.
+            /*Vec3 intersectionVertex = Vec3Sub(*currentVertex, *previousVertex);
+            intersectionVertex = Vec3Mul(intersectionVertex, t);
+            intersectionVertex = Vec3Add(intersectionVertex, *previousVertex);*/
 
-            // NOTE(sbalse): Insert the intersection point to the list of "inside vertices".
-            insideVertices[numInsideVertices] = intersectionPoint;
+            const Vec3 intersectionVertex =
+            {
+                .m_X = std::lerp(previousVertex->m_X, currentVertex->m_X, t),
+                .m_Y = std::lerp(previousVertex->m_Y, currentVertex->m_Y, t),
+                .m_Z = std::lerp(previousVertex->m_Z, currentVertex->m_Z, t),
+            };
+
+            // NOTE(sbalse): Similar to the vertex, also do linear interpolation of the texture coordinate.
+            const Tex2 interpolatedTexCoord =
+            {
+                .m_U = std::lerp(previousTexCoord->m_U, currentTexCoord->m_U, t),
+                .m_V = std::lerp(previousTexCoord->m_V, currentTexCoord->m_V, t),
+            };
+
+            // NOTE(sbalse): Insert the intersection Vertex and Texture coordinate to the list of
+            // "inside vertices".
+            insideVertices[numInsideVertices] = intersectionVertex;
+            insideTexCoords[numInsideVertices] = interpolatedTexCoord;
             numInsideVertices++;
         }
 
-        // NOTE(sbalse): If the DP is positive then that means the current vertex is *inside* the plane.
+        // NOTE(sbalse): If the current dot product is positive meaning that the current vertex is *inside*
+        // the plane.
         if (currentDP > 0)
         {
             // NOTE(sbalse): Insert the current vertex to the list of "inside vertices".
             insideVertices[numInsideVertices] = *currentVertex;
+            insideTexCoords[numInsideVertices] = *currentTexCoord;
             numInsideVertices++;
         }
 
         previousDP = currentDP;
         previousVertex = currentVertex;
+        previousTexCoord = currentTexCoord;
         currentVertex++;
+        currentTexCoord++;
     }
 
     // NOTE(sbalse): Copy the list of inside vertices into the polygon parameter.
     for (int i = 0; i < numInsideVertices; i++)
     {
         polygon->m_Vertices[i] = insideVertices[i];
+        polygon->m_TexCoords[i] = insideTexCoords[i];
     }
     polygon->m_NumVertices = numInsideVertices;
 }
@@ -139,12 +166,20 @@ void InitFrustumPlanes(const float fovX, const float fovY, const float znear, co
     };
 }
 
-Polygon CreatePolygonFromTriangle(const Vec3 v0, const Vec3 v1, const Vec3 v2)
+Polygon CreatePolygonFromTriangle(
+    const Vec3 v0,
+    const Vec3 v1,
+    const Vec3 v2,
+    const Tex2 t0,
+    const Tex2 t1,
+    const Tex2 t2
+)
 {
     const Polygon result =
     {
         .m_Vertices = { v0, v1, v2 },
         .m_NumVertices = 3, // NOTE(sbalse): Triangle.
+        .m_TexCoords = { t0, t1, t2 },
     };
 
     return result;
@@ -166,6 +201,10 @@ void TrianglesFromPolygon(
         triangles[i].m_Points[0] = Vec4FromVec3(polygon->m_Vertices[index0]);
         triangles[i].m_Points[1] = Vec4FromVec3(polygon->m_Vertices[index1]);
         triangles[i].m_Points[2] = Vec4FromVec3(polygon->m_Vertices[index2]);
+
+        triangles[i].m_TexCoords[0] = polygon->m_TexCoords[index0];
+        triangles[i].m_TexCoords[1] = polygon->m_TexCoords[index1];
+        triangles[i].m_TexCoords[2] = polygon->m_TexCoords[index2];
     }
 }
 
