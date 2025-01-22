@@ -292,7 +292,7 @@ static void Update()
     if (!fs_Paused)
     {
         // g_Mesh.m_Rotation.m_X += 0.6f * fs_DeltaTimeSeconds;
-        g_Mesh.m_Rotation.m_Y += 0.6f * fs_DeltaTimeSeconds;
+        // g_Mesh.m_Rotation.m_Y += 0.6f * fs_DeltaTimeSeconds;
         // g_Mesh.m_Rotation.m_Z += 0.6f * fs_DeltaTimeSeconds;
 
         // g_Mesh.m_Scale.m_X += 0.2 * fs_DeltaTimeSeconds;

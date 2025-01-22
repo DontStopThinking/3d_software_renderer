@@ -17,9 +17,9 @@ u32 LightApplyIntensity(const u32 originalColor, const float percentageFactor)
     // NOTE(sbalse): Use bitwise "&" to extract only the FF part of the color.
 
     const u32 a = (originalColor & ALPHA_MASK);
-    const u32 r = static_cast<u32>((originalColor & RED_MASK) * clampedPercentageFactor);
-    const u32 g = static_cast<u32>((originalColor & GREEN_MASK) * clampedPercentageFactor);
-    const u32 b = static_cast<u32>((originalColor & BLUE_MASK) * clampedPercentageFactor);
+    const u32 r = scast<u32>((originalColor & RED_MASK) * clampedPercentageFactor);
+    const u32 g = scast<u32>((originalColor & GREEN_MASK) * clampedPercentageFactor);
+    const u32 b = scast<u32>((originalColor & BLUE_MASK) * clampedPercentageFactor);
 
     const u32 result = a | (r & RED_MASK) | (g & GREEN_MASK) | (b & BLUE_MASK);
 

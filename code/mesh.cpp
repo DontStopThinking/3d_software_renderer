@@ -47,7 +47,7 @@ void LoadObjFileData(const std::string_view fileName)
 
     std::array<char, 1024> line = {};
 
-    constexpr int maxNumberOfCharactersToRead = static_cast<int>(line.size());
+    constexpr int maxNumberOfCharactersToRead = scast<int>(line.size());
 
     std::vector<Tex2> texcoords;
 

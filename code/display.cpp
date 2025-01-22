@@ -68,7 +68,7 @@ void RenderColorBuffer()
         g_ColorBuffer.m_Texture,
         nullptr,
         g_ColorBuffer.m_Buffer,
-        static_cast<int>(g_WindowWidth * sizeof(u32)));
+        scast<int>(g_WindowWidth * sizeof(u32)));
     SDL_RenderCopy(
         g_Renderer,
         g_ColorBuffer.m_Texture,
@@ -82,7 +82,7 @@ void RenderZBuffer()
         g_ZBuffer.m_Texture,
         nullptr,
         g_ZBuffer.m_BufferUInt,
-        static_cast<int>(g_WindowWidth * sizeof(u32)));
+        scast<int>(g_WindowWidth * sizeof(u32)));
     SDL_RenderCopy(
         g_Renderer,
         g_ZBuffer.m_Texture,
@@ -172,11 +172,11 @@ void DrawLine(const int x0, const int y0, const int x1, const int y1, const u32 
     const int longestSideLength = std::max(std::abs(deltaX), std::abs(deltaY));
 
     // NOTE(sbalse): Find how much we should increment in both X and Y each step.
-    const float xInc = deltaX / static_cast<float>(longestSideLength);
-    const float yInc = deltaY / static_cast<float>(longestSideLength);
+    const float xInc = deltaX / scast<float>(longestSideLength);
+    const float yInc = deltaY / scast<float>(longestSideLength);
 
-    float currentX = static_cast<float>(x0);
-    float currentY = static_cast<float>(y0);
+    float currentX = scast<float>(x0);
+    float currentY = scast<float>(y0);
 
     for (int i = 0; i <= longestSideLength; i++)
     {
@@ -191,7 +191,7 @@ void TakeScreenshot(SDL_Renderer* renderer, const std::string_view fileNamePrefi
     LOG_INFO("Taking screenshot...");
 
     // NOTE(sbalse): Get current Unix timestamp.
-    const u64 currentUnixTime = static_cast<u64>(std::time(nullptr));
+    const u64 currentUnixTime = scast<u64>(std::time(nullptr));
 
     char fileNameWithTimestamp[128] = {};
     sprintf_s(fileNameWithTimestamp, "%s-%llu.bmp", fileNamePrefix.data(), currentUnixTime);

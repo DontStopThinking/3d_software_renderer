@@ -56,7 +56,7 @@ static void DrawTrianglePixel(
     const u32 color)
 {
     // NOTE(sbalse): Create three Vec2 to find the interpolation.
-    const Vec2 p = { static_cast<float>(x), static_cast<float>(y) };
+    const Vec2 p = { scast<float>(x), scast<float>(y) };
     const Vec2 a = Vec2FromVec4(pointA);
     const Vec2 b = Vec2FromVec4(pointB);
     const Vec2 c = Vec2FromVec4(pointC);
@@ -84,7 +84,7 @@ static void DrawTrianglePixel(
 
     // NOTE(sbalse): Only draw the pixel if the depth value is less than the one previously stored
     // in the z-buffer.
-    const size_t zBufferPos = static_cast<size_t>(g_WindowWidth * y) + x;
+    const size_t zBufferPos = scast<size_t>(g_WindowWidth * y) + x;
     if (zBufferPos <= g_ZBuffer.m_BufferUNormSize
         && interpolatedReciprocalW < g_ZBuffer.m_BufferUNorm[zBufferPos])
     {
@@ -95,7 +95,7 @@ static void DrawTrianglePixel(
         if (g_RenderBufferMethod == RenderBufferMethod::ZBuffer
             && zBufferPos <= g_ZBuffer.m_BufferUIntSize)
         {
-            const u8 grayscale = static_cast<u8>(interpolatedReciprocalW * 255.0f);
+            const u8 grayscale = scast<u8>(interpolatedReciprocalW * 255.0f);
             const u32 zcolor = (grayscale << 16) | (grayscale << 8) | grayscale;
             g_ZBuffer.m_BufferUInt[zBufferPos] = zcolor;
         }
@@ -119,7 +119,7 @@ static void DrawTriangleTexel(
     const u32* const texture
 )
 {
-    const Vec2 p = { static_cast<float>(x), static_cast<float>(y) };
+    const Vec2 p = { scast<float>(x), scast<float>(y) };
     const Vec2 a = Vec2FromVec4(pointA);
     const Vec2 b = Vec2FromVec4(pointB);
     const Vec2 c = Vec2FromVec4(pointC);
@@ -167,8 +167,8 @@ static void DrawTriangleTexel(
 
     // NOTE(sbalse): The interpolated value will be between 0 and 1 so we need to multiply it by the
     // texture width and height to map the UV coordinates to the full texture width and height.
-    const int texelX = std::abs(static_cast<int>(interpolatedU * g_TextureWidth) % g_TextureWidth);
-    const int texelY = std::abs(static_cast<int>(interpolatedV * g_TextureHeight) % g_TextureHeight);
+    const int texelX = std::abs(scast<int>(interpolatedU * g_TextureWidth) % g_TextureWidth);
+    const int texelY = std::abs(scast<int>(interpolatedV * g_TextureHeight) % g_TextureHeight);
 
     // NOTE(sbalse): Adjust 1/w so that pixels closer to the camera have smaller values of
     // interpolated reciprocal W.
@@ -190,7 +190,7 @@ static void DrawTriangleTexel(
         if (g_RenderBufferMethod == RenderBufferMethod::ZBuffer
             && zBufferPos <= g_ZBuffer.m_BufferUIntSize)
         {
-            const u8 grayscale = static_cast<u8>(interpolatedReciprocalW * 255.0f);
+            const u8 grayscale = scast<u8>(interpolatedReciprocalW * 255.0f);
             const u32 zcolor = (grayscale << 16) | (grayscale << 8) | grayscale;
             g_ZBuffer.m_BufferUInt[zBufferPos] = zcolor;
         }
@@ -262,14 +262,14 @@ void DrawFilledTriangle(
     }
 
     // NOTE(sbalse): Create three vector points after we sort the vertices.
-    const Vec4 pointA = { static_cast<float>(x0), static_cast<float>(y0), z0, w0 };
-    const Vec4 pointB = { static_cast<float>(x1), static_cast<float>(y1), z1, w1 };
-    const Vec4 pointC = { static_cast<float>(x2), static_cast<float>(y2), z2, w2 };
+    const Vec4 pointA = { scast<float>(x0), scast<float>(y0), z0, w0 };
+    const Vec4 pointB = { scast<float>(x1), scast<float>(y1), z1, w1 };
+    const Vec4 pointC = { scast<float>(x2), scast<float>(y2), z2, w2 };
 
     // NOTE(sbalse): Use inverse slopes since we want to know how much our x changes with y (instead
     // of the other way around).
-    float invSlope1 = (y1 - y0 != 0) ? (static_cast<float>(x1 - x0) / std::abs(y1 - y0)) : 0.0f;
-    float invSlope2 = (y2 - y0 != 0) ? (static_cast<float>(x2 - x0) / std::abs(y2 - y0)) : 0.0f;
+    float invSlope1 = (y1 - y0 != 0) ? (scast<float>(x1 - x0) / std::abs(y1 - y0)) : 0.0f;
+    float invSlope2 = (y2 - y0 != 0) ? (scast<float>(x2 - x0) / std::abs(y2 - y0)) : 0.0f;
 
     if (y1 - y0 != 0)
     {
@@ -279,8 +279,8 @@ void DrawFilledTriangle(
             (y - y1) is the entire range from start to end of y. Then we multiply by the slope to
             get the correct scaling factor to get where we want to be in the range. The first "x1 +"
             is just to offset the range of values by the start value of x0. */
-            int xStart = static_cast<int>(x1 + (y - y1) * invSlope1);
-            int xEnd = static_cast<int>(x0 + (y - y0) * invSlope2);
+            int xStart = scast<int>(x1 + (y - y1) * invSlope1);
+            int xEnd = scast<int>(x0 + (y - y0) * invSlope2);
 
             if (xEnd < xStart)
             {
@@ -298,15 +298,15 @@ void DrawFilledTriangle(
 
     /////////// NOTE(sbalse): Render the bottom part of the triangle (flat-top). /////////////////
 
-    invSlope1 = (y2 - y1 != 0) ? (static_cast<float>(x2 - x1) / std::abs(y2 - y1)) : 0.0f;
-    invSlope2 = (y2 - y0 != 0) ? (static_cast<float>(x2 - x0) / std::abs(y2 - y0)) : 0.0f;
+    invSlope1 = (y2 - y1 != 0) ? (scast<float>(x2 - x1) / std::abs(y2 - y1)) : 0.0f;
+    invSlope2 = (y2 - y0 != 0) ? (scast<float>(x2 - x0) / std::abs(y2 - y0)) : 0.0f;
 
     if (y2 - y1 != 0)
     {
         for (int y = y1; y <= y2; y++)
         {
-            int xStart = static_cast<int>(x1 + (y - y1) * invSlope1);
-            int xEnd = static_cast<int>(x2 + (y - y2) * invSlope2);
+            int xStart = scast<int>(x1 + (y - y1) * invSlope1);
+            int xEnd = scast<int>(x2 + (y - y2) * invSlope2);
 
             if (xEnd < xStart)
             {
@@ -387,9 +387,9 @@ void DrawTexturedTriangle(
     v2 = 1.0f - v2;
 
     // NOTE(sbalse): Create vectors for the 3 triangle vertices.
-    const Vec4 pointA = { static_cast<float>(x0), static_cast<float>(y0), z0, w0 };
-    const Vec4 pointB = { static_cast<float>(x1), static_cast<float>(y1), z1, w1 };
-    const Vec4 pointC = { static_cast<float>(x2), static_cast<float>(y2), z2, w2 };
+    const Vec4 pointA = { scast<float>(x0), scast<float>(y0), z0, w0 };
+    const Vec4 pointB = { scast<float>(x1), scast<float>(y1), z1, w1 };
+    const Vec4 pointC = { scast<float>(x2), scast<float>(y2), z2, w2 };
     const Tex2 aUV = { u0, v0 };
     const Tex2 bUV = { u1, v1 };
     const Tex2 cUV = { u2, v2 };
@@ -398,8 +398,8 @@ void DrawTexturedTriangle(
 
     // NOTE(sbalse): Use inverse slopes since we want to know how much our x changes with y (instead
     // of the other way around).
-    float invSlope1 = (y1 - y0 != 0) ? (static_cast<float>(x1 - x0) / std::abs(y1 - y0)) : 0.0f;
-    float invSlope2 = (y2 - y0 != 0) ? (static_cast<float>(x2 - x0) / std::abs(y2 - y0)) : 0.0f;
+    float invSlope1 = (y1 - y0 != 0) ? (scast<float>(x1 - x0) / std::abs(y1 - y0)) : 0.0f;
+    float invSlope2 = (y2 - y0 != 0) ? (scast<float>(x2 - x0) / std::abs(y2 - y0)) : 0.0f;
 
     if (y1 - y0 != 0)
     {
@@ -409,8 +409,8 @@ void DrawTexturedTriangle(
             (y - y1) is the entire range from start to end of y. Then we multiply by the slope to
             get the correct scaling factor to get where we want to be in the range. The first "x1 +"
             is just to offset the range of values by the start value of x0. */
-            int xStart = static_cast<int>(x1 + (y - y1) * invSlope1);
-            int xEnd = static_cast<int>(x0 + (y - y0) * invSlope2);
+            int xStart = scast<int>(x1 + (y - y1) * invSlope1);
+            int xEnd = scast<int>(x0 + (y - y0) * invSlope2);
 
             if (xEnd < xStart)
             {
@@ -428,15 +428,15 @@ void DrawTexturedTriangle(
 
     /////////// NOTE(sbalse): Render the bottom part of the triangle (flat-top). /////////////////
 
-    invSlope1 = (y2 - y1 != 0) ? (static_cast<float>(x2 - x1) / std::abs(y2 - y1)) : 0.0f;
-    invSlope2 = (y2 - y0 != 0) ? (static_cast<float>(x2 - x0) / std::abs(y2 - y0)) : 0.0f;
+    invSlope1 = (y2 - y1 != 0) ? (scast<float>(x2 - x1) / std::abs(y2 - y1)) : 0.0f;
+    invSlope2 = (y2 - y0 != 0) ? (scast<float>(x2 - x0) / std::abs(y2 - y0)) : 0.0f;
 
     if (y2 - y1 != 0)
     {
         for (int y = y1; y <= y2; y++)
         {
-            int xStart = static_cast<int>(x1 + (y - y1) * invSlope1);
-            int xEnd = static_cast<int>(x2 + (y - y2) * invSlope2);
+            int xStart = scast<int>(x1 + (y - y1) * invSlope1);
+            int xEnd = scast<int>(x2 + (y - y2) * invSlope2);
 
             if (xEnd < xStart)
             {
