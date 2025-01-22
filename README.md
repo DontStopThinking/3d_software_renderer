@@ -18,9 +18,9 @@ Follow these steps to build and run the project:
 - `Escape` to quit.
 - `F9` to take a screenshot. Saved as `screenshot-{timestamp}.bmp` in the executable directory.
 - `p` to pause.
-- `f` to toggle logging of FPS and average frame time.
-- `g` to toggle rendering background grid.
-- `z` to toggle displaying of the Z buffer.
+- `f` to toggle logging of FPS and average frame time to the terminal.
+- `g` to toggle rendering of background grid.
+- `z` to toggle visualization of the Z buffer.
 - `1` to draw only wireframe and vertices.
 - `2` to display only wireframe.
 - `3` to draw filled.
