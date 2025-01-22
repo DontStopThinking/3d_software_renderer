@@ -54,10 +54,6 @@ static void ClipPolygonAgainstPlane(Polygon* const polygon, const FrustumPlane p
             const float t = previousDP / (previousDP - currentDP);
 
             // NOTE(sbalse): Calculate the intersection vertex using linear interpolation.
-            /*Vec3 intersectionVertex = Vec3Sub(*currentVertex, *previousVertex);
-            intersectionVertex = Vec3Mul(intersectionVertex, t);
-            intersectionVertex = Vec3Add(intersectionVertex, *previousVertex);*/
-
             const Vec3 intersectionVertex =
             {
                 .m_X = std::lerp(previousVertex->m_X, currentVertex->m_X, t),
