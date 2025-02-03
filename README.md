@@ -8,7 +8,7 @@ Uses SDL for window and input management and for drawing pixels to a color buffe
 
 ## Compiling and Running
 Follow these steps to build and run the project:
-1. Open `/projects/Pikuma3DGraphics.sln` in Visual Studio 2022.
+1. Open `/projects/SoftwareRenderer.sln` in Visual Studio 2022.
 2. Right click on the **3DRenderer** project and go to **Properties**.
 3. Go to **Debugging** -> And set `Working Directory` to `$(SolutionDir)..\data\` for **All Configurations**.
 4. Click OK.
