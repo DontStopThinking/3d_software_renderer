@@ -45,7 +45,7 @@ static void Setup()
 {
     // NOTE(sbalse): Init the render mode, triangle culling method and shading method.
     g_CullMethod = CullMethod::Backface;
-    g_RenderMethod = RenderMethod::Wire;
+    g_RenderMethod = RenderMethod::Textured;
     g_ShadingMethod = ShadingMethod::FlatShading;
 
     // NOTE(sbalse): Allocate the color buffer.
@@ -291,9 +291,9 @@ static void Update()
 
     if (!fs_Paused)
     {
-        // g_Mesh.m_Rotation.m_X += 0.6f * fs_DeltaTimeSeconds;
-        // g_Mesh.m_Rotation.m_Y += 0.6f * fs_DeltaTimeSeconds;
-        // g_Mesh.m_Rotation.m_Z += 0.6f * fs_DeltaTimeSeconds;
+        g_Mesh.m_Rotation.m_X += 0.6f * fs_DeltaTimeSeconds;
+        g_Mesh.m_Rotation.m_Y += 0.6f * fs_DeltaTimeSeconds;
+        g_Mesh.m_Rotation.m_Z += 0.6f * fs_DeltaTimeSeconds;
 
         // g_Mesh.m_Scale.m_X += 0.2 * fs_DeltaTimeSeconds;
         // g_Mesh.m_Scale.m_Y += 0.2 * fs_DeltaTimeSeconds;
