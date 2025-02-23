@@ -6,7 +6,7 @@
 #include "vector.h"
 
 constexpr u32 NUM_PLANES = FrustumPlane_Count;
-static constinit Plane fs_FrustumPlanes[NUM_PLANES] = {};
+static constinit Plane g_FrustumPlanes[NUM_PLANES] = {};
 
 static void ClipPolygonAgainstPlane(Polygon* const polygon, const FrustumPlane plane)
 {
@@ -15,8 +15,8 @@ static void ClipPolygonAgainstPlane(Polygon* const polygon, const FrustumPlane p
         return;
     }
 
-    const Vec3 planePoint = fs_FrustumPlanes[plane].m_Point;
-    const Vec3 planeNormal = fs_FrustumPlanes[plane].m_Normal;
+    const Vec3 planePoint = g_FrustumPlanes[plane].m_Point;
+    const Vec3 planeNormal = g_FrustumPlanes[plane].m_Normal;
 
     // NOTE(sbalse): Declare a static array of inside vertices and texture coordinates of those vertices that
     // will be our final destination polygon (returned in-place using the `polygon` param).
@@ -129,33 +129,33 @@ void InitFrustumPlanes(const float fovX, const float fovY, const float znear, co
     const float sinHalfFovY = std::sinf(fovY / 2.0f);
 
     // NOTE(sbalse): Use X FOV for the left and right planes.
-    fs_FrustumPlanes[FrustumPlane_Left] =
+    g_FrustumPlanes[FrustumPlane_Left] =
     {
         .m_Point = ORIGIN,
         .m_Normal = { .m_X = cosHalfFovX, .m_Y = 0, .m_Z = sinHalfFovX },
     };
-    fs_FrustumPlanes[FrustumPlane_Right] =
+    g_FrustumPlanes[FrustumPlane_Right] =
     {
         .m_Point = ORIGIN,
         .m_Normal = { .m_X = -cosHalfFovX, .m_Y = 0, .m_Z = sinHalfFovX },
     };
     // NOTE(sbalse): Use Y FOV for the top and bottom planes.
-    fs_FrustumPlanes[FrustumPlane_Top] =
+    g_FrustumPlanes[FrustumPlane_Top] =
     {
         .m_Point = ORIGIN,
         .m_Normal = { .m_X = 0, .m_Y = -cosHalfFovY, .m_Z = sinHalfFovY },
     };
-    fs_FrustumPlanes[FrustumPlane_Bottom] =
+    g_FrustumPlanes[FrustumPlane_Bottom] =
     {
         .m_Point = ORIGIN,
         .m_Normal = { .m_X = 0, .m_Y = cosHalfFovY, .m_Z = sinHalfFovY },
     };
-    fs_FrustumPlanes[FrustumPlane_Near] =
+    g_FrustumPlanes[FrustumPlane_Near] =
     {
         .m_Point = { .m_X = 0, .m_Y = 0, .m_Z = znear },
         .m_Normal = { .m_X = 0, .m_Y = 0, .m_Z = 1 },
     };
-    fs_FrustumPlanes[FrustumPlane_Far] =
+    g_FrustumPlanes[FrustumPlane_Far] =
     {
         .m_Point = { .m_X = 0, .m_Y = 0, .m_Z = zfar },
         .m_Normal = { .m_X = 0, .m_Y = 0, .m_Z = -1 },

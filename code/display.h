@@ -55,22 +55,12 @@ enum class ShadingMethod
     FlatShading
 };
 
-// NOTE(sbalse): extern as these will be initialized in display.cpp
-extern constinit SDL_Window* g_Window;
-extern constinit SDL_Renderer* g_Renderer;
-extern constinit ColorBuffer g_ColorBuffer;
-extern constinit ZBuffer g_ZBuffer;
-
-extern constinit int g_WindowWidth;
-extern constinit int g_WindowHeight;
-
-// TODO(sbalse): IMGUI
-extern constinit CullMethod g_CullMethod;
-extern constinit RenderMethod g_RenderMethod;
-extern constinit ShadingMethod g_ShadingMethod;
-extern constinit RenderBufferMethod g_RenderBufferMethod;
-
 bool InitializeWindow(const std::string_view windowTitle);
+void DestroyWindow();
+
+int GetWindowWidth();
+int GetWindowHeight();
+
 void DrawGrid();
 void DrawPixel(const int x, const int y, const u32 color);
 void DrawRectangle(
@@ -78,11 +68,28 @@ void DrawRectangle(
     const int y,
     const int width,
     const int height,
-    const u32 color);
+    const u32 color
+);
 void DrawLine(const int x0, const int y0, const int x1, const int y1, const u32 color);
-void TakeScreenshot(SDL_Renderer* renderer, const std::string_view fileNamePrefix);
+void TakeScreenshot(const std::string_view fileNamePrefix);
+
 void RenderColorBuffer();
 void RenderZBuffer();
 void ClearColorBuffer(const u32 color);
 void ClearZBuffer();
-void DestroyWindow();
+
+float GetZBufferAt(const int x, const int y);
+// NOTE(sbalse): Normalized Z-Buffer is the array that's actually used for depth-testing.
+void UpdateNormalizedZBufferAt(const int x, const int y, const float value);
+// NOTE(sbalse): Displayable Z-Buffer is the array that contains the grayscale value used to display
+// and visualize the z-buffer.
+void UpdateDisplayableZBufferAt(const int x, const int y, const u32 value);
+
+CullMethod GetCullMethod();
+void SetCullMethod(const CullMethod newCullMethod);
+RenderMethod GetRenderMethod();
+void SetRenderMethod(const RenderMethod newRenderMethod);
+ShadingMethod GetShadingMethod();
+void SetShadingMethod(const ShadingMethod newShadingMethod);
+RenderBufferMethod GetRenderBufferMethod();
+void SetRenderBufferMethod(const RenderBufferMethod newRenderBufferMethod);

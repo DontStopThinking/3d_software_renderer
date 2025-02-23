@@ -84,20 +84,17 @@ static void DrawTrianglePixel(
 
     // NOTE(sbalse): Only draw the pixel if the depth value is less than the one previously stored
     // in the z-buffer.
-    const size_t zBufferPos = scast<size_t>(g_WindowWidth * y) + x;
-    if (zBufferPos <= g_ZBuffer.m_BufferUNormSize
-        && interpolatedReciprocalW < g_ZBuffer.m_BufferUNorm[zBufferPos])
+    if (interpolatedReciprocalW < GetZBufferAt(x, y))
     {
         DrawPixel(x, y, color);
 
-        g_ZBuffer.m_BufferUNorm[zBufferPos] = interpolatedReciprocalW;
+        UpdateNormalizedZBufferAt(x, y, interpolatedReciprocalW);
 
-        if (g_RenderBufferMethod == RenderBufferMethod::ZBuffer
-            && zBufferPos <= g_ZBuffer.m_BufferUIntSize)
+        if (GetRenderBufferMethod() == RenderBufferMethod::ZBuffer)
         {
             const u8 grayscale = scast<u8>(interpolatedReciprocalW * 255.0f);
             const u32 zcolor = (grayscale << 16) | (grayscale << 8) | grayscale;
-            g_ZBuffer.m_BufferUInt[zBufferPos] = zcolor;
+            UpdateDisplayableZBufferAt(x, y, zcolor);
         }
     }
 }
@@ -176,23 +173,20 @@ static void DrawTriangleTexel(
 
     // NOTE(sbalse): Only draw the pixel if the depth value is less than the one previously stored
     // in the z-buffer.
-    const u32 zBufferPos = (g_WindowWidth * y) + x;
-    if (zBufferPos <= g_ZBuffer.m_BufferUNormSize
-        && interpolatedReciprocalW < g_ZBuffer.m_BufferUNorm[zBufferPos])
+    if (interpolatedReciprocalW < GetZBufferAt(x, y))
     {
         // NOTE(sbalse): Draw the corresponding color from our texture.
         const u32 color = texture[(g_TextureWidth * texelY) + texelX];
         DrawPixel(x, y, color);
 
         // NOTE(sbalse): Update the z-buffer value with the 1/w of this current pixel.
-        g_ZBuffer.m_BufferUNorm[zBufferPos] = interpolatedReciprocalW;
+        UpdateNormalizedZBufferAt(x, y, interpolatedReciprocalW);
 
-        if (g_RenderBufferMethod == RenderBufferMethod::ZBuffer
-            && zBufferPos <= g_ZBuffer.m_BufferUIntSize)
+        if (GetRenderBufferMethod() == RenderBufferMethod::ZBuffer)
         {
             const u8 grayscale = scast<u8>(interpolatedReciprocalW * 255.0f);
             const u32 zcolor = (grayscale << 16) | (grayscale << 8) | grayscale;
-            g_ZBuffer.m_BufferUInt[zBufferPos] = zcolor;
+            UpdateDisplayableZBufferAt(x, y, zcolor);
         }
     }
 }

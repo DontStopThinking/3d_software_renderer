@@ -18,7 +18,7 @@ namespace Internal
     constexpr std::string_view LOG_COLOR_GREEN = "\033[32m";
     constexpr std::string_view LOG_COLOR_RED = "\033[31m";
 
-    void GetTimestamp(const std::span<char> buffer)
+    inline void GetTimestamp(const std::span<char> buffer)
     {
         const std::time_t now = std::time(nullptr);
         std::tm localTime = {};

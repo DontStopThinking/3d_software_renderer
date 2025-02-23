@@ -21,70 +21,41 @@ extern "C"
 #include "clipping.h"
 #include "triangle.h"
 
-// NOTE(sbalse): "fs_" prefix = file static variables.
-static constinit bool fs_IsRunning = false;
-static constinit u32 fs_PreviousUpdateTimeMS = 0u; // NOTE(sbalse): Time taken by the previous update in milliseconds.
-static constinit float fs_DeltaTimeSeconds = 0.0f;
+// NOTE(sbalse): "g_" prefix = file static variables.
+static constinit bool g_IsRunning = false;
+static constinit u32 g_PreviousUpdateTimeMS = 0u; // NOTE(sbalse): Time taken by the previous update in milliseconds.
+static constinit float g_DeltaTimeSeconds = 0.0f;
 
 inline constexpr size_t MAX_NUM_TRIANGLES_TO_RENDER = 10000;
-static constinit size_t fs_NumTrianglesToRender = 0;
-static constinit std::array<Triangle, MAX_NUM_TRIANGLES_TO_RENDER> fs_TrianglesToRender = {};
+static constinit size_t g_NumTrianglesToRender = 0;
+static constinit std::array<Triangle, MAX_NUM_TRIANGLES_TO_RENDER> g_TrianglesToRender = {};
 
 // TODO(sbalse): IMGUI
-static constinit bool fs_Paused = false;
-static constinit bool fs_PrintFPS = false;
-static constinit bool fs_DisplayGrid = false;
+static constinit bool g_Paused = false;
+static constinit bool g_PrintFPS = false;
+static constinit bool g_DisplayGrid = false;
 
-static constinit Mat4 fs_WorldMatrix = {};
-static constinit Mat4 fs_ProjMatrix = {};
-static constinit Mat4 fs_ViewMatrix = {};
+static constinit Mat4 g_WorldMatrix = {};
+static constinit Mat4 g_ProjMatrix = {};
+static constinit Mat4 g_ViewMatrix = {};
 
 inline constexpr Vec3 CAMERA_UP_DIRECTION = { 0, 1, 0 };
 
 static void Setup()
 {
     // NOTE(sbalse): Init the render mode, triangle culling method and shading method.
-    g_CullMethod = CullMethod::Backface;
-    g_RenderMethod = RenderMethod::Textured;
-    g_ShadingMethod = ShadingMethod::FlatShading;
-
-    // NOTE(sbalse): Allocate the color buffer.
-    const size_t colorBufferSize = g_WindowWidth * g_WindowHeight;
-    g_ColorBuffer.m_Buffer = rcast<u32*>(std::calloc(colorBufferSize, sizeof(u32)));
-    g_ColorBuffer.m_Size = colorBufferSize;
-
-    g_ColorBuffer.m_Texture = SDL_CreateTexture(
-        g_Renderer,
-        SDL_PIXELFORMAT_RGBA32,
-        SDL_TEXTUREACCESS_STREAMING,
-        g_WindowWidth,
-        g_WindowHeight);
-
-    // NOTE(sbalse): Allocate the z buffer.
-    const size_t zBufferUNormSize = g_WindowWidth * g_WindowHeight;
-    g_ZBuffer.m_BufferUNorm = rcast<float*>(std::calloc(zBufferUNormSize, sizeof(float)));
-    g_ZBuffer.m_BufferUNormSize = zBufferUNormSize;
-
-    const size_t zBufferUIntSize = g_WindowWidth * g_WindowHeight;
-    g_ZBuffer.m_BufferUInt = rcast<u32*>(std::calloc(zBufferUIntSize, sizeof(u32)));
-    g_ZBuffer.m_BufferUIntSize = zBufferUIntSize;
-
-    g_ZBuffer.m_Texture = SDL_CreateTexture(
-        g_Renderer,
-        SDL_PIXELFORMAT_RGB888,
-        SDL_TEXTUREACCESS_STREAMING,
-        g_WindowWidth,
-        g_WindowHeight
-    );
+    SetCullMethod(CullMethod::Backface);
+    SetRenderMethod(RenderMethod::Textured);
+    SetShadingMethod(ShadingMethod::FlatShading);
 
     // NOTE(sbalse): Init the perspective projection matrix.
-    const float aspectX = scast<float>(g_WindowWidth) / scast<float>(g_WindowHeight);
-    const float aspectY = scast<float>(g_WindowHeight) / scast<float>(g_WindowWidth);
+    const float aspectX = scast<float>(GetWindowWidth()) / scast<float>(GetWindowHeight());
+    const float aspectY = scast<float>(GetWindowHeight()) / scast<float>(GetWindowWidth());
     constexpr float FOV_Y_RADIANS = M_PI / 3.0f; // NOTE(sbalse): Vertical FOV. Same as 180 / 3 or 60 deg.
     const float fovXRadians = std::atanf(std::tanf(FOV_Y_RADIANS / 2.0f) * aspectX) * 2.0f;
     constexpr float Z_NEAR = 1.0f;
     constexpr float Z_FAR = 20.0f;
-    fs_ProjMatrix = Mat4MakePerspective(FOV_Y_RADIANS, aspectY, Z_NEAR, Z_FAR);
+    g_ProjMatrix = Mat4MakePerspective(FOV_Y_RADIANS, aspectY, Z_NEAR, Z_FAR);
 
     // NOTE(sbalse): Initialize clipping frustum planes with a point and a normal.
     InitFrustumPlanes(fovXRadians, FOV_Y_RADIANS, Z_NEAR, Z_FAR);
@@ -94,8 +65,6 @@ static void Setup()
 
     LoadObjFileData("assets/f22.obj");
     LoadPNGTextureData("assets/f22.png");
-
-    // fs_TrianglesToRender.reserve(MAX_NUM_TRIANGLES_TO_RENDER);
 }
 
 static void ProcessInput()
@@ -108,7 +77,7 @@ static void ProcessInput()
         {
         case SDL_QUIT:
         {
-            fs_IsRunning = false;
+            g_IsRunning = false;
         } break;
 
         case SDL_KEYDOWN:
@@ -116,18 +85,18 @@ static void ProcessInput()
             // NOTE(sbalse): ESCAPE to quit.
             if (event.key.keysym.sym == SDLK_ESCAPE)
             {
-                fs_IsRunning = false;
+                g_IsRunning = false;
             }
             // NOTE(sbalse): F9 to take a screenshot.
             else if (event.key.keysym.sym == SDLK_F9)
             {
-                TakeScreenshot(g_Renderer, "screenshot");
+                TakeScreenshot("screenshot");
             }
             // NOTE(sbalse): p to pause mesh rotation.
             else if (event.key.keysym.sym == SDLK_p)
             {
-                fs_Paused = !fs_Paused;
-                if (fs_Paused)
+                g_Paused = !g_Paused;
+                if (g_Paused)
                 {
                     LOG_INFO("Paused: true.");
                 }
@@ -139,8 +108,8 @@ static void ProcessInput()
             // NOTE(sbalse): f to toggle printing of FPS.
             else if (event.key.keysym.sym == SDLK_f)
             {
-                fs_PrintFPS = !fs_PrintFPS;
-                if (fs_PrintFPS)
+                g_PrintFPS = !g_PrintFPS;
+                if (g_PrintFPS)
                 {
                     LOG_INFO("Printing FPS.");
                 }
@@ -151,8 +120,8 @@ static void ProcessInput()
             }
             else if (event.key.keysym.sym == SDLK_g)
             {
-                fs_DisplayGrid = !fs_DisplayGrid;
-                if (fs_DisplayGrid)
+                g_DisplayGrid = !g_DisplayGrid;
+                if (g_DisplayGrid)
                 {
                     LOG_INFO("Displaying grid.");
                 }
@@ -163,109 +132,109 @@ static void ProcessInput()
             }
             else if (event.key.keysym.sym == SDLK_z)
             {
-                if (g_RenderBufferMethod == RenderBufferMethod::ColorBuffer)
+                if (GetRenderBufferMethod() == RenderBufferMethod::ColorBuffer)
                 {
-                    g_RenderBufferMethod = RenderBufferMethod::ZBuffer;
+                    SetRenderBufferMethod(RenderBufferMethod::ZBuffer);
                     LOG_INFO("Change RenderBufferMethod to \"ZBuffer\"");
                 }
-                else if (g_RenderBufferMethod == RenderBufferMethod::ZBuffer)
+                else if (GetRenderBufferMethod() == RenderBufferMethod::ZBuffer)
                 {
-                    g_RenderBufferMethod = RenderBufferMethod::ColorBuffer;
+                    SetRenderBufferMethod(RenderBufferMethod::ColorBuffer);
                     LOG_INFO("Change RenderBufferMethod to \"ColorBuffer\"");
                 }
             }
             // NOTE(sbalse): 1 to draw wireframe and vertices.
             else if (event.key.keysym.sym == SDLK_1)
             {
-                g_RenderMethod = RenderMethod::WireVertex;
+                SetRenderMethod(RenderMethod::WireVertex);
                 LOG_INFO("Set render method to \"WireVertex\".");
             }
             // NOTE(sbalse): 2 to display ONLY wireframe.
             else if (event.key.keysym.sym == SDLK_2)
             {
-                g_RenderMethod = RenderMethod::Wire;
+                SetRenderMethod(RenderMethod::Wire);
                 LOG_INFO("Set render method to \"Wire\".");
             }
             // NOTE(sbalse): 3 to draw filled triangles.
             else if (event.key.keysym.sym == SDLK_3)
             {
-                g_RenderMethod = RenderMethod::FillTriangle;
+                SetRenderMethod(RenderMethod::FillTriangle);
                 LOG_INFO("Set render method to \"FillTriangle\".");
             }
             // NOTE(sbalse): 4 to display both filled and wireframe.
             else if (event.key.keysym.sym == SDLK_4)
             {
-                g_RenderMethod = RenderMethod::FillTriangleWire;
+                SetRenderMethod(RenderMethod::FillTriangleWire);
                 LOG_INFO("Set render method to \"FillTriangleWire\".");
             }
             // NOTE(sbalse): 5 to enable flat shading.
             else if (event.key.keysym.sym == SDLK_5)
             {
-                g_ShadingMethod = ShadingMethod::FlatShading;
+                SetShadingMethod(ShadingMethod::FlatShading);
                 LOG_INFO("Set shading method to \"FlatShading\".");
             }
             // NOTE(sbalse): 6 to disable shading.
             else if (event.key.keysym.sym == SDLK_6)
             {
-                g_ShadingMethod = ShadingMethod::None;
+                SetShadingMethod(ShadingMethod::None);
                 LOG_INFO("Set shading method to \"None\".");
             }
             // NOTE(sbalse): 7 to display textured.
             else if (event.key.keysym.sym == SDLK_7)
             {
-                g_RenderMethod = RenderMethod::Textured;
+                SetRenderMethod(RenderMethod::Textured);
                 LOG_INFO("Set render method to \"Textured\".");
             }
             // NOTE(sbalse): 8 to display textured and wired.
             else if (event.key.keysym.sym == SDLK_8)
             {
-                g_RenderMethod = RenderMethod::WireTextured;
+                SetRenderMethod(RenderMethod::WireTextured);
                 LOG_INFO("Set render method to \"WireTextured\".");
             }
             // NOTE(sbalse): c to toggle backface culling.
             else if (event.key.keysym.sym == SDLK_c)
             {
-                if (g_CullMethod == CullMethod::Backface)
+                if (GetCullMethod() == CullMethod::Backface)
                 {
-                    g_CullMethod = CullMethod::None;
+                    SetCullMethod(CullMethod::None);
                     LOG_INFO("Set cull method to \"None\".");
                 }
                 else
                 {
-                    g_CullMethod = CullMethod::Backface;
+                    SetCullMethod(CullMethod::Backface);
                     LOG_INFO("Set cull method to \"Backface\".");
                 }
             }
             // NOTE(sbalse): Up arrow to move camera up vertically.
             else if (event.key.keysym.sym == SDLK_UP)
             {
-                g_Camera.m_Position.m_Y += 3.0f * fs_DeltaTimeSeconds;
+                g_Camera.m_Position.m_Y += 3.0f * g_DeltaTimeSeconds;
             }
             // NOTE(sbalse): Down arrow to move camera down vertically.
             else if (event.key.keysym.sym == SDLK_DOWN)
             {
-                g_Camera.m_Position.m_Y -= 3.0f * fs_DeltaTimeSeconds;
+                g_Camera.m_Position.m_Y -= 3.0f * g_DeltaTimeSeconds;
             }
             // NOTE(sbalse): a to rotate camera to the left.
             else if (event.key.keysym.sym == SDLK_a)
             {
-                g_Camera.m_Yaw -= 1.0f * fs_DeltaTimeSeconds;
+                g_Camera.m_Yaw -= 1.0f * g_DeltaTimeSeconds;
             }
             // NOTE(sbalse): d to rotate camera to the right.
             else if (event.key.keysym.sym == SDLK_d)
             {
-                g_Camera.m_Yaw += 1.0f * fs_DeltaTimeSeconds;
+                g_Camera.m_Yaw += 1.0f * g_DeltaTimeSeconds;
             }
             // NOTE(sbalse): w to move camera forward.
             else if (event.key.keysym.sym == SDLK_w)
             {
-                g_Camera.m_ForwardVelocity = Vec3Mul(g_Camera.m_Direction, 5.0f * fs_DeltaTimeSeconds);
+                g_Camera.m_ForwardVelocity = Vec3Mul(g_Camera.m_Direction, 5.0f * g_DeltaTimeSeconds);
                 g_Camera.m_Position = Vec3Add(g_Camera.m_Position, g_Camera.m_ForwardVelocity);
             }
             // NOTE(sbalse): s to move camera backward.
             else if (event.key.keysym.sym == SDLK_s)
             {
-                g_Camera.m_ForwardVelocity = Vec3Mul(g_Camera.m_Direction, 5.0f * fs_DeltaTimeSeconds);
+                g_Camera.m_ForwardVelocity = Vec3Mul(g_Camera.m_Direction, 5.0f * g_DeltaTimeSeconds);
                 g_Camera.m_Position = Vec3Sub(g_Camera.m_Position, g_Camera.m_ForwardVelocity);
             }
         } break;
@@ -276,10 +245,10 @@ static void ProcessInput()
 static void Update()
 {
     const u32 currentUpdateTimeMS = SDL_GetTicks();
-    const u32 frameDuration = currentUpdateTimeMS - fs_PreviousUpdateTimeMS;
+    const u32 frameDuration = currentUpdateTimeMS - g_PreviousUpdateTimeMS;
 
-    fs_DeltaTimeSeconds = frameDuration / 1000.0f;
-    fs_PreviousUpdateTimeMS = currentUpdateTimeMS;
+    g_DeltaTimeSeconds = frameDuration / 1000.0f;
+    g_PreviousUpdateTimeMS = currentUpdateTimeMS;
 
     const int timeToWait = scast<int>(FRAME_TARGET_TIME_MS) - frameDuration;
     if (timeToWait > 0 && timeToWait <= FRAME_TARGET_TIME_MS)
@@ -287,26 +256,26 @@ static void Update()
         SDL_Delay(timeToWait);
     }
 
-    fs_NumTrianglesToRender = 0;
+    g_NumTrianglesToRender = 0;
 
-    if (!fs_Paused)
+    if (!g_Paused)
     {
-        g_Mesh.m_Rotation.m_X += 0.6f * fs_DeltaTimeSeconds;
-        g_Mesh.m_Rotation.m_Y += 0.6f * fs_DeltaTimeSeconds;
-        g_Mesh.m_Rotation.m_Z += 0.6f * fs_DeltaTimeSeconds;
+        g_Mesh.m_Rotation.m_X += 0.6f * g_DeltaTimeSeconds;
+        g_Mesh.m_Rotation.m_Y += 0.6f * g_DeltaTimeSeconds;
+        g_Mesh.m_Rotation.m_Z += 0.6f * g_DeltaTimeSeconds;
 
-        // g_Mesh.m_Scale.m_X += 0.2 * fs_DeltaTimeSeconds;
-        // g_Mesh.m_Scale.m_Y += 0.2 * fs_DeltaTimeSeconds;
-        // g_Mesh.m_Scale.m_Z += 0.2 * fs_DeltaTimeSeconds;
+        // g_Mesh.m_Scale.m_X += 0.2 * g_DeltaTimeSeconds;
+        // g_Mesh.m_Scale.m_Y += 0.2 * g_DeltaTimeSeconds;
+        // g_Mesh.m_Scale.m_Z += 0.2 * g_DeltaTimeSeconds;
 
-        // g_Mesh.m_Translation.m_X += 0.6 * fs_DeltaTimeSeconds;
+        // g_Mesh.m_Translation.m_X += 0.6 * g_DeltaTimeSeconds;
 
         // NOTE(sbalse): Move away from the camera.
         g_Mesh.m_Translation.m_Z = 5.0f;
 
         // NOTE(sbalse): Change the camera position per animation frame.
-        // g_Camera.m_Position.m_X += 0.6f * fs_DeltaTimeSeconds;
-        // g_Camera.m_Position.m_Y += 0.6f * fs_DeltaTimeSeconds;
+        // g_Camera.m_Position.m_X += 0.6f * g_DeltaTimeSeconds;
+        // g_Camera.m_Position.m_Y += 0.6f * g_DeltaTimeSeconds;
     }
 
     // NOTE(sbalse): Create scale, translation, and rotation matrices that will be
@@ -325,12 +294,12 @@ static void Update()
 
     // NOTE(sbalse): Create a "World Matrix" combining scale, rotation and translation
     // matrices of the mesh.
-    fs_WorldMatrix = MAT4_IDENTITY;
-    fs_WorldMatrix = Mat4MulMat4(scaleMatrix, fs_WorldMatrix);
-    fs_WorldMatrix = Mat4MulMat4(rotationMatrixX, fs_WorldMatrix);
-    fs_WorldMatrix = Mat4MulMat4(rotationMatrixY, fs_WorldMatrix);
-    fs_WorldMatrix = Mat4MulMat4(rotationMatrixZ, fs_WorldMatrix);
-    fs_WorldMatrix = Mat4MulMat4(translationMatrix, fs_WorldMatrix);
+    g_WorldMatrix = MAT4_IDENTITY;
+    g_WorldMatrix = Mat4MulMat4(scaleMatrix, g_WorldMatrix);
+    g_WorldMatrix = Mat4MulMat4(rotationMatrixX, g_WorldMatrix);
+    g_WorldMatrix = Mat4MulMat4(rotationMatrixY, g_WorldMatrix);
+    g_WorldMatrix = Mat4MulMat4(rotationMatrixZ, g_WorldMatrix);
+    g_WorldMatrix = Mat4MulMat4(translationMatrix, g_WorldMatrix);
 
     // NOTE(sbalse): Initialize the camera target looking at the positive z-axis.
     Vec3 cameraTarget = { 0, 0, 1 };
@@ -341,7 +310,7 @@ static void Update()
     cameraTarget = Vec3Add(g_Camera.m_Position, g_Camera.m_Direction);
 
     // NOTE(sbalse): Create the view matrix.
-    fs_ViewMatrix = Mat4LookAt(g_Camera.m_Position, cameraTarget, CAMERA_UP_DIRECTION);
+    g_ViewMatrix = Mat4LookAt(g_Camera.m_Position, cameraTarget, CAMERA_UP_DIRECTION);
 
     // NOTE(sbalse): Loop all faces of our mesh.
     for (const Face& meshFace : g_Mesh.m_Faces)
@@ -362,11 +331,11 @@ static void Update()
             Vec4 transformedVertex = Vec4FromVec3(faceVertices[vertexIndex]);
 
             // NOTE(sbalse): Transform our vertex by multiplying it with our world matrix.
-            transformedVertex = Mat4MulVec4(fs_WorldMatrix, transformedVertex);
+            transformedVertex = Mat4MulVec4(g_WorldMatrix, transformedVertex);
 
             // NOTE(sbalse): Multiply the view matrix by the original vector to transform
             // our scene to camera space.
-            transformedVertex = Mat4MulVec4(fs_ViewMatrix, transformedVertex);
+            transformedVertex = Mat4MulVec4(g_ViewMatrix, transformedVertex);
 
             // NOTE(sbalse): Save the transformed vertex.
             transformedVertices[vertexIndex] = transformedVertex;
@@ -397,7 +366,7 @@ static void Update()
         const float cameraAlignmentWithFaceNormal = Vec3Dot(normal, cameraRay);
 
         // NOTE(sbalse): Do backface culling.
-        if (g_CullMethod == CullMethod::Backface)
+        if (GetCullMethod() == CullMethod::Backface)
         {
             // NOTE(sbalse): If the normal is not visible to the camera then don't draw this face. AKA,
             // cull this face.
@@ -439,24 +408,24 @@ static void Update()
             {
                 // NOTE(sbalse): Project the current vertex.
                 projectedPoints[vertexIndex] = Mat4MulVec4Project(
-                    fs_ProjMatrix,
+                    g_ProjMatrix,
                     triangleAfterClipping.m_Points[vertexIndex]);
 
                 // NOTE(sbalse): Invert the y values to account for our flipped y axis.
                 projectedPoints[vertexIndex].m_Y *= -1;
 
                 // NOTE(sbalse): Scale into the view.
-                projectedPoints[vertexIndex].m_X *= (g_WindowWidth / 2.0f);
-                projectedPoints[vertexIndex].m_Y *= (g_WindowHeight / 2.0f);
+                projectedPoints[vertexIndex].m_X *= (GetWindowWidth() / 2.0f);
+                projectedPoints[vertexIndex].m_Y *= (GetWindowHeight() / 2.0f);
 
                 // NOTE(sbalse): Translate the projected point to the middle of the screen.
-                projectedPoints[vertexIndex].m_X += (g_WindowWidth / 2.0f);
-                projectedPoints[vertexIndex].m_Y += (g_WindowHeight / 2.0f);
+                projectedPoints[vertexIndex].m_X += (GetWindowWidth() / 2.0f);
+                projectedPoints[vertexIndex].m_Y += (GetWindowHeight() / 2.0f);
             }
 
             u32 triangleColor = meshFace.m_Color;
 
-            if (g_ShadingMethod == ShadingMethod::FlatShading)
+            if (GetShadingMethod() == ShadingMethod::FlatShading)
             {
                 // NOTE(sbalse): Calculate the shade intensity based on how aligned is the face normal and
                 // the inverse of the light ray.
@@ -498,10 +467,10 @@ static void Update()
                 .m_Color = triangleColor,
             };
 
-            if (fs_NumTrianglesToRender < MAX_NUM_TRIANGLES_TO_RENDER)
+            if (g_NumTrianglesToRender < MAX_NUM_TRIANGLES_TO_RENDER)
             {
                 // NOTE(sbalse): Save the projected triangle in the array of triangles to render.
-                fs_TrianglesToRender[fs_NumTrianglesToRender++] = triangleToRender;
+                g_TrianglesToRender[g_NumTrianglesToRender++] = triangleToRender;
             }
         }
     }
@@ -512,18 +481,19 @@ static void Render()
     ClearColorBuffer(BLACK);
     ClearZBuffer();
 
-    if (fs_DisplayGrid)
+    if (g_DisplayGrid)
     {
         DrawGrid();
     }
 
     // NOTE(sbalse): Loop all projected triangles and render them.
-    for (int currentTriangleIndex = 0; currentTriangleIndex < fs_NumTrianglesToRender; currentTriangleIndex++)
+    for (int currentTriangleIndex = 0; currentTriangleIndex < g_NumTrianglesToRender; currentTriangleIndex++)
     {
-        const Triangle& currentTriangle = fs_TrianglesToRender[currentTriangleIndex];
+        const Triangle& currentTriangle = g_TrianglesToRender[currentTriangleIndex];
 
-        if (g_RenderMethod == RenderMethod::FillTriangle
-            || g_RenderMethod == RenderMethod::FillTriangleWire)
+        const RenderMethod currentRenderMethod = GetRenderMethod();
+        if (currentRenderMethod == RenderMethod::FillTriangle
+            || currentRenderMethod == RenderMethod::FillTriangleWire)
         {
             // NOTE(sbalse): Draw mesh face triangles.
             DrawFilledTriangle(
@@ -546,7 +516,7 @@ static void Render()
                 currentTriangle.m_Color);
         }
 
-        if (g_RenderMethod == RenderMethod::WireVertex)
+        if (currentRenderMethod == RenderMethod::WireVertex)
         {
             // NOTE(sbalse): Draw the cube corner vertices.
             DrawRectangle(
@@ -570,8 +540,8 @@ static void Render()
         }
 
         // NOTE(sbalse): Draw textured triangle.
-        if (g_RenderMethod == RenderMethod::Textured
-            || g_RenderMethod == RenderMethod::WireTextured)
+        if (currentRenderMethod == RenderMethod::Textured
+            || currentRenderMethod == RenderMethod::WireTextured)
         {
             DrawTexturedTriangle(
                 // NOTE(sbalse): vertex A.
@@ -599,10 +569,10 @@ static void Render()
                 g_MeshTexture);
         }
 
-        if (g_RenderMethod == RenderMethod::Wire
-            || g_RenderMethod == RenderMethod::WireVertex
-            || g_RenderMethod == RenderMethod::FillTriangleWire
-            || g_RenderMethod == RenderMethod::WireTextured)
+        if (currentRenderMethod == RenderMethod::Wire
+            || currentRenderMethod == RenderMethod::WireVertex
+            || currentRenderMethod == RenderMethod::FillTriangleWire
+            || currentRenderMethod == RenderMethod::WireTextured)
         {
             // NOTE(sbalse): Draw mesh wireframe triangles.
             DrawTriangle(
@@ -617,32 +587,22 @@ static void Render()
     }
 
     // NOTE(sbalse): Clear the list of triangles to render every frame loop.
-    fs_TrianglesToRender = {};
+    g_TrianglesToRender = {};
 
-    if (g_RenderBufferMethod == RenderBufferMethod::ColorBuffer)
+    const RenderBufferMethod currentRenderBufferMethod = GetRenderBufferMethod();
+    if (currentRenderBufferMethod == RenderBufferMethod::ColorBuffer)
     {
         RenderColorBuffer();
     }
-    else if (g_RenderBufferMethod == RenderBufferMethod::ZBuffer)
+    else if (currentRenderBufferMethod == RenderBufferMethod::ZBuffer)
     {
         RenderZBuffer();
     }
-
-    SDL_RenderPresent(g_Renderer);
 }
 
 // NOTE(sbalse): Free the memory that was dynamically allocated by the program.
 static void FreeResources()
 {
-    std::free(g_ColorBuffer.m_Buffer);
-    SDL_DestroyTexture(g_ColorBuffer.m_Texture);
-    g_ColorBuffer = {};
-
-    std::free(g_ZBuffer.m_BufferUNorm);
-    std::free(g_ZBuffer.m_BufferUInt);
-    SDL_DestroyTexture(g_ZBuffer.m_Texture);
-    g_ZBuffer = {};
-
     upng_free(g_PNGTexture);
 }
 
@@ -654,9 +614,9 @@ int main(int argc, char* argv[])
     const std::string_view windowTitle = "3D Renderer [RELEASE]";
 #endif // _DEBUG
 
-    fs_IsRunning = InitializeWindow(windowTitle);
+    g_IsRunning = InitializeWindow(windowTitle);
 
-    if (!fs_IsRunning)
+    if (!g_IsRunning)
     {
         return EXIT_FAILURE;
     }
@@ -667,7 +627,7 @@ int main(int argc, char* argv[])
     u32 printTime = prevTime;
     int numFrames = 0;
 
-    while (fs_IsRunning)
+    while (g_IsRunning)
     {
         const u32 currTime = SDL_GetTicks();
 
@@ -678,7 +638,7 @@ int main(int argc, char* argv[])
         Render();
 
         // NOTE(sbalse): Print the FPS and average frame time.
-        if (fs_PrintFPS)
+        if (g_PrintFPS)
         {
             numFrames += 1;
             if (currTime - printTime >= 1000) // NOTE(sbalse): If at least 1 second has elapsed.

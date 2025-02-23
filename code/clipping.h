@@ -22,7 +22,7 @@ struct Plane
 };
 
 inline constexpr u32 MAX_NUM_POLYGON_VERTICES = 10;
-inline constexpr u32 MAX_NUM_POLYGON_TRIANGLES = 10; // NOTE(sbalse): Max triangles a clipped polygon contains.
+inline constexpr u32 MAX_NUM_POLYGON_TRIANGLES = 10; // NOTE(sbalse): Max triangles that a clipped polygon contains.
 
 struct Polygon
 {

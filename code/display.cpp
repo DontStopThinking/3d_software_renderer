@@ -6,17 +6,43 @@
 
 #include "log.h"
 
-constinit SDL_Window* g_Window = nullptr;
-constinit SDL_Renderer* g_Renderer = nullptr;
-constinit ColorBuffer g_ColorBuffer = {};
-constinit ZBuffer g_ZBuffer = {};
-constinit CullMethod g_CullMethod = {};
-constinit RenderMethod g_RenderMethod = {};
-constinit ShadingMethod g_ShadingMethod = {};
-constinit RenderBufferMethod g_RenderBufferMethod = {};
+static constinit SDL_Window* g_Window = nullptr;
+static constinit SDL_Renderer* g_Renderer = nullptr;
+static constinit ColorBuffer g_ColorBuffer = {};
+static constinit ZBuffer g_ZBuffer = {};
+static constinit CullMethod g_CullMethod = {};
+static constinit RenderMethod g_RenderMethod = {};
+static constinit ShadingMethod g_ShadingMethod = {};
+static constinit RenderBufferMethod g_RenderBufferMethod = {};
 
-constinit int g_WindowWidth = 1024;
-constinit int g_WindowHeight = 720;
+static constinit int g_WindowWidth = 1024;
+static constinit int g_WindowHeight = 720;
+
+static void UpdateColorBufferAt(const int x, const int y, const u32 color)
+{
+    if (x < 0 || x >= g_WindowWidth || y < 0 || y >= g_WindowHeight)
+    {
+        return;
+    }
+
+    const int position = (g_WindowWidth * y) + x;
+    if (position > g_ColorBuffer.m_Size)
+    {
+        return;
+    }
+
+    g_ColorBuffer.m_Buffer[position] = color;
+}
+
+int GetWindowWidth()
+{
+    return g_WindowWidth;
+}
+
+int GetWindowHeight()
+{
+    return g_WindowHeight;
+}
 
 bool InitializeWindow(const std::string_view windowTitle)
 {
@@ -57,6 +83,35 @@ bool InitializeWindow(const std::string_view windowTitle)
         return false;
     }
 
+    // NOTE(sbalse): Allocate the color buffer.
+    const size_t colorBufferSize = g_WindowWidth * g_WindowHeight;
+    g_ColorBuffer.m_Buffer = rcast<u32*>(std::calloc(colorBufferSize, sizeof(u32)));
+    g_ColorBuffer.m_Size = colorBufferSize;
+
+    g_ColorBuffer.m_Texture = SDL_CreateTexture(
+        g_Renderer,
+        SDL_PIXELFORMAT_RGBA32,
+        SDL_TEXTUREACCESS_STREAMING,
+        g_WindowWidth,
+        g_WindowHeight);
+
+    // NOTE(sbalse): Allocate the z buffer.
+    const size_t zBufferUNormSize = g_WindowWidth * g_WindowHeight;
+    g_ZBuffer.m_BufferUNorm = rcast<float*>(std::calloc(zBufferUNormSize, sizeof(float)));
+    g_ZBuffer.m_BufferUNormSize = zBufferUNormSize;
+
+    const size_t zBufferUIntSize = g_WindowWidth * g_WindowHeight;
+    g_ZBuffer.m_BufferUInt = rcast<u32*>(std::calloc(zBufferUIntSize, sizeof(u32)));
+    g_ZBuffer.m_BufferUIntSize = zBufferUIntSize;
+
+    g_ZBuffer.m_Texture = SDL_CreateTexture(
+        g_Renderer,
+        SDL_PIXELFORMAT_RGB888,
+        SDL_TEXTUREACCESS_STREAMING,
+        g_WindowWidth,
+        g_WindowHeight
+    );
+
     LOG_INFO("Successfully initialized window.");
 
     return true;
@@ -68,12 +123,15 @@ void RenderColorBuffer()
         g_ColorBuffer.m_Texture,
         nullptr,
         g_ColorBuffer.m_Buffer,
-        scast<int>(g_WindowWidth * sizeof(u32)));
+        scast<int>(g_WindowWidth * sizeof(u32))
+    );
     SDL_RenderCopy(
         g_Renderer,
         g_ColorBuffer.m_Texture,
         nullptr,
-        nullptr);
+        nullptr
+    );
+    SDL_RenderPresent(g_Renderer);
 }
 
 void RenderZBuffer()
@@ -82,45 +140,130 @@ void RenderZBuffer()
         g_ZBuffer.m_Texture,
         nullptr,
         g_ZBuffer.m_BufferUInt,
-        scast<int>(g_WindowWidth * sizeof(u32)));
+        scast<int>(g_WindowWidth * sizeof(u32))
+    );
     SDL_RenderCopy(
         g_Renderer,
         g_ZBuffer.m_Texture,
         nullptr,
-        nullptr);
+        nullptr
+    );
+    SDL_RenderPresent(g_Renderer);
+}
+
+CullMethod GetCullMethod()
+{
+    return g_CullMethod;
+}
+
+void SetCullMethod(const CullMethod newCullMethod)
+{
+    g_CullMethod = newCullMethod;
+}
+
+void SetRenderMethod(const RenderMethod newRenderMethod)
+{
+    g_RenderMethod = newRenderMethod;
+}
+
+ShadingMethod GetShadingMethod()
+{
+    return g_ShadingMethod;
+}
+
+RenderMethod GetRenderMethod()
+{
+    return g_RenderMethod;
+}
+
+void SetShadingMethod(const ShadingMethod newShadingMethod)
+{
+    g_ShadingMethod = newShadingMethod;
+}
+
+RenderBufferMethod GetRenderBufferMethod()
+{
+    return g_RenderBufferMethod;
+}
+
+void SetRenderBufferMethod(const RenderBufferMethod newRenderBufferMethod)
+{
+    g_RenderBufferMethod = newRenderBufferMethod;
 }
 
 // NOTE(sbalse): Clear our custom color buffer to the given color.
 void ClearColorBuffer(const u32 color)
 {
-    for (int row = 0; row < g_WindowHeight; row++)
+    const size_t size = g_ColorBuffer.m_Size;
+    for (int i = 0; i < size; i++)
     {
-        for (int col = 0; col < g_WindowWidth; col++)
-        {
-            const int pixelIndex = (g_WindowWidth * row) + col;
-            g_ColorBuffer.m_Buffer[pixelIndex] = color;
-        }
+        g_ColorBuffer.m_Buffer[i] = color;
     }
 }
 
 void ClearZBuffer()
 {
-    for (int row = 0; row < g_WindowHeight; row++)
+    const size_t size = g_ZBuffer.m_BufferUNormSize;
+    for (int i = 0; i < size; i++)
     {
-        for (int col = 0; col < g_WindowWidth; col++)
-        {
-            const int pixelIndex = (g_WindowWidth * row) + col;
-            // NOTE(sbalse): Clear z-buffer to "1". "0" is the near plane and "1" is the far plane.
-            // So z-buffer being 1 after clearing means that it is infinitely far away right by
-            // default.
-            g_ZBuffer.m_BufferUNorm[pixelIndex] = 1.0;
+        // NOTE(sbalse): Clear z-buffer to "1". "0" is the near plane and "1" is the far plane.
+        // So z-buffer being 1 after clearing means that it is infinitely far away right by
+        // default.
+        g_ZBuffer.m_BufferUNorm[i] = 1.0;
 
-            // NOTE(sbalse): We represent the far plane with WHITE color. This means, objects that
-            // are closer to the camera appear darker and objects far away or no geometry appears as
-            // white in the z-buffer visualization.
-            g_ZBuffer.m_BufferUInt[pixelIndex] = WHITE;
-        }
+        // NOTE(sbalse): We represent the far plane with WHITE color. This means, objects that
+        // are closer to the camera appear darker and objects far away or no geometry appears as
+        // white in the z-buffer visualization.
+        g_ZBuffer.m_BufferUInt[i] = WHITE;
     }
+}
+
+float GetZBufferAt(const int x, const int y)
+{
+    if (x < 0 || x >= g_WindowWidth || y < 0 || y > g_WindowHeight)
+    {
+        return 1.0f;
+    }
+
+    const size_t position = scast<size_t>(g_WindowWidth * y) + x;
+    if (position >= g_ZBuffer.m_BufferUNormSize)
+    {
+        return 1.0f;
+    }
+
+    return g_ZBuffer.m_BufferUNorm[position];
+}
+
+void UpdateNormalizedZBufferAt(const int x, const int y, const float value)
+{
+    if (x < 0 || x >= g_WindowWidth || y < 0 || y > g_WindowHeight)
+    {
+        return;
+    }
+
+    const size_t position = scast<size_t>(g_WindowWidth * y) + x;
+    if (position >= g_ZBuffer.m_BufferUIntSize)
+    {
+        return;
+    }
+
+    g_ZBuffer.m_BufferUNorm[position] = value;
+}
+
+void UpdateDisplayableZBufferAt(const int x, const int y, const u32 value)
+{
+    if (x < 0 || x >= g_WindowWidth || y < 0 || y > g_WindowHeight)
+    {
+        return;
+    }
+
+    const size_t position = scast<size_t>(g_WindowWidth * y) + x;
+    if (position >= g_ZBuffer.m_BufferUIntSize)
+    {
+        return;
+    }
+
+    g_ZBuffer.m_BufferUInt[position] = value;
 }
 
 void DrawGrid()
@@ -131,7 +274,7 @@ void DrawGrid()
         {
             if (x % 10 == 0 || y % 10 == 0)
             {
-                g_ColorBuffer.m_Buffer[(g_WindowWidth * y) + x] = GRAY;
+                UpdateColorBufferAt(x, y, GRAY);
             }
         }
     }
@@ -139,11 +282,7 @@ void DrawGrid()
 
 void DrawPixel(const int x, const int y, const u32 color)
 {
-    if (x >= 0 && y >= 0 && x < g_WindowWidth && y < g_WindowHeight)
-    {
-        int position = (g_WindowWidth * y) + x;
-        g_ColorBuffer.m_Buffer[position] = color;
-    }
+    UpdateColorBufferAt(x, y, color);
 }
 
 void DrawRectangle(
@@ -186,7 +325,7 @@ void DrawLine(const int x0, const int y0, const int x1, const int y1, const u32 
     }
 }
 
-void TakeScreenshot(SDL_Renderer* renderer, const std::string_view fileNamePrefix)
+void TakeScreenshot(const std::string_view fileNamePrefix)
 {
     LOG_INFO("Taking screenshot...");
 
@@ -197,7 +336,7 @@ void TakeScreenshot(SDL_Renderer* renderer, const std::string_view fileNamePrefi
     sprintf_s(fileNameWithTimestamp, "%s-%llu.bmp", fileNamePrefix.data(), currentUnixTime);
 
     int rendererWidth, rendererHeight;
-    SDL_GetRendererOutputSize(renderer, &rendererWidth, &rendererHeight);
+    SDL_GetRendererOutputSize(g_Renderer, &rendererWidth, &rendererHeight);
 
     SDL_Surface* screenshotSurface = SDL_CreateRGBSurface(
         0,
@@ -210,11 +349,12 @@ void TakeScreenshot(SDL_Renderer* renderer, const std::string_view fileNamePrefi
         ALPHA_MASK
     );
     SDL_RenderReadPixels(
-        renderer,
+        g_Renderer,
         nullptr,
         SDL_PIXELFORMAT_ARGB8888,
         screenshotSurface->pixels,
-        screenshotSurface->pitch);
+        screenshotSurface->pitch
+    );
     SDL_SaveBMP(screenshotSurface, fileNameWithTimestamp);
     SDL_FreeSurface(screenshotSurface);
 
@@ -223,6 +363,15 @@ void TakeScreenshot(SDL_Renderer* renderer, const std::string_view fileNamePrefi
 
 void DestroyWindow()
 {
+    std::free(g_ColorBuffer.m_Buffer);
+    SDL_DestroyTexture(g_ColorBuffer.m_Texture);
+    g_ColorBuffer = {};
+
+    std::free(g_ZBuffer.m_BufferUNorm);
+    std::free(g_ZBuffer.m_BufferUInt);
+    SDL_DestroyTexture(g_ZBuffer.m_Texture);
+    g_ZBuffer = {};
+
     SDL_DestroyRenderer(g_Renderer);
     SDL_DestroyWindow(g_Window);
     SDL_Quit();
