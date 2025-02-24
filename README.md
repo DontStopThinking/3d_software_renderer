@@ -30,5 +30,5 @@ Follow these steps to build and run the project:
 - `7` to display textured.
 - `8` to display textured and wireframe.
 - `c` to toggle backface culling.
-- `WASD` - Basic FPS camera movement.
-- `up/down arrows`- Move camera up/down vertically.
+- `WASD + Mouse Movement` for FPS camera movement.
+- `Q/E` move camera vertically up/down.

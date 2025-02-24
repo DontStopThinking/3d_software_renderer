@@ -7,7 +7,7 @@ struct Mat4
 };
 
 // NOTE(sbalse): A 4x4 identity matrix.
-constexpr Mat4 MAT4_IDENTITY =
+inline constexpr Mat4 MAT4_IDENTITY =
 {
     .m_Values =
     {

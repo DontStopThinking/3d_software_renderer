@@ -43,6 +43,8 @@ inline constexpr Vec3 CAMERA_UP_DIRECTION = { 0, 1, 0 };
 
 static void Setup()
 {
+    SDL_SetRelativeMouseMode(SDL_TRUE);
+
     // NOTE(sbalse): Init the render mode, triangle culling method and shading method.
     SetCullMethod(CullMethod::Backface);
     SetRenderMethod(RenderMethod::Textured);
@@ -50,6 +52,9 @@ static void Setup()
 
     // NOTE(sbalse): Init the light direction. Z = 1 means light goes from camera into the screen.
     InitLight(Vec3{ .m_Z = 1 });
+
+    // NOTE(sbalse): Init the camera
+    InitCamera(Vec3{ 0, 0, 0 }, Vec3{ 0, 0, 1 });
 
     // NOTE(sbalse): Init the perspective projection matrix.
     const float aspectX = scast<float>(GetWindowWidth()) / scast<float>(GetWindowHeight());
@@ -208,41 +213,52 @@ static void ProcessInput()
                     LOG_INFO("Set cull method to \"Backface\".");
                 }
             }
-            // NOTE(sbalse): Up arrow to move camera up vertically.
-            else if (event.key.keysym.sym == SDLK_UP)
-            {
-                g_Camera.m_Position.m_Y += 3.0f * g_DeltaTimeSeconds;
-            }
-            // NOTE(sbalse): Down arrow to move camera down vertically.
-            else if (event.key.keysym.sym == SDLK_DOWN)
-            {
-                g_Camera.m_Position.m_Y -= 3.0f * g_DeltaTimeSeconds;
-            }
-            // NOTE(sbalse): a to rotate camera to the left.
-            else if (event.key.keysym.sym == SDLK_a)
-            {
-                g_Camera.m_Yaw -= 1.0f * g_DeltaTimeSeconds;
-            }
-            // NOTE(sbalse): d to rotate camera to the right.
-            else if (event.key.keysym.sym == SDLK_d)
-            {
-                g_Camera.m_Yaw += 1.0f * g_DeltaTimeSeconds;
-            }
-            // NOTE(sbalse): w to move camera forward.
-            else if (event.key.keysym.sym == SDLK_w)
-            {
-                g_Camera.m_ForwardVelocity = Vec3Mul(g_Camera.m_Direction, 5.0f * g_DeltaTimeSeconds);
-                g_Camera.m_Position = Vec3Add(g_Camera.m_Position, g_Camera.m_ForwardVelocity);
-            }
-            // NOTE(sbalse): s to move camera backward.
-            else if (event.key.keysym.sym == SDLK_s)
-            {
-                g_Camera.m_ForwardVelocity = Vec3Mul(g_Camera.m_Direction, 5.0f * g_DeltaTimeSeconds);
-                g_Camera.m_Position = Vec3Sub(g_Camera.m_Position, g_Camera.m_ForwardVelocity);
-            }
         } break;
         }
     }
+
+    const u8* keystate = SDL_GetKeyboardState(nullptr);
+    Vec3 cameraPos = GetCameraPosition();
+    Vec3 cameraDir = GetCameraDirection();
+    // Obtain camera's right vector by doing cross product of current facing direction with the world'd UP vector.
+    Vec3 cameraRight = Vec3Cross(cameraDir, Vec3{ 0, 1, 0 });
+    Vec3Normalize(&cameraRight);
+
+    if (keystate[SDL_SCANCODE_W])
+    {
+        cameraPos = Vec3Add(cameraPos, Vec3Mul(cameraDir, 5.0f * g_DeltaTimeSeconds));
+    }
+    else if (keystate[SDL_SCANCODE_S])
+    {
+        cameraPos = Vec3Sub(cameraPos, Vec3Mul(cameraDir, 5.0f * g_DeltaTimeSeconds));
+    }
+
+    if (keystate[SDL_SCANCODE_A])
+    {
+        cameraPos = Vec3Add(cameraPos, Vec3Mul(cameraRight, 5.0f * g_DeltaTimeSeconds));
+    }
+    else if (keystate[SDL_SCANCODE_D])
+    {
+        cameraPos = Vec3Sub(cameraPos, Vec3Mul(cameraRight, 5.0f * g_DeltaTimeSeconds));
+    }
+
+    if (keystate[SDL_SCANCODE_Q])
+    {
+        cameraPos.m_Y += 5.0f * g_DeltaTimeSeconds;
+    }
+    else if (keystate[SDL_SCANCODE_E])
+    {
+        cameraPos.m_Y -= 5.0f * g_DeltaTimeSeconds;
+    }
+
+    UpdateCameraPosition(cameraPos);
+
+    int mouseX, mouseY;
+    SDL_GetRelativeMouseState(&mouseX, &mouseY);
+
+    constexpr float cameraSensitivity = 0.002f;
+    RotateCameraYaw(mouseX * cameraSensitivity);
+    RotateCameraPitch(mouseY * cameraSensitivity);
 }
 
 static void Update()
@@ -286,11 +302,13 @@ static void Update()
     const Mat4 scaleMatrix = Mat4MakeScale(
         g_Mesh.m_Scale.m_X,
         g_Mesh.m_Scale.m_Y,
-        g_Mesh.m_Scale.m_Z);
+        g_Mesh.m_Scale.m_Z
+    );
     const Mat4 translationMatrix = Mat4MakeTranslation(
         g_Mesh.m_Translation.m_X,
         g_Mesh.m_Translation.m_Y,
-        g_Mesh.m_Translation.m_Z);
+        g_Mesh.m_Translation.m_Z
+    );
     const Mat4 rotationMatrixX = Mat4MakeRotationX(g_Mesh.m_Rotation.m_X);
     const Mat4 rotationMatrixY = Mat4MakeRotationY(g_Mesh.m_Rotation.m_Y);
     const Mat4 rotationMatrixZ = Mat4MakeRotationZ(g_Mesh.m_Rotation.m_Z);
@@ -304,16 +322,11 @@ static void Update()
     g_WorldMatrix = Mat4MulMat4(rotationMatrixZ, g_WorldMatrix);
     g_WorldMatrix = Mat4MulMat4(translationMatrix, g_WorldMatrix);
 
-    // NOTE(sbalse): Initialize the camera target looking at the positive z-axis.
-    Vec3 cameraTarget = { 0, 0, 1 };
-    const Mat4 cameraYawRotation = Mat4MakeRotationY(g_Camera.m_Yaw);
-    g_Camera.m_Direction = Vec3FromVec4(Mat4MulVec4(cameraYawRotation, Vec4FromVec3(cameraTarget)));
-
-    // NOTE(sbalse): Offset the camera position in the direction where the camera is pointing at.
-    cameraTarget = Vec3Add(g_Camera.m_Position, g_Camera.m_Direction);
+    // NOTE(sbalse): Update camera look at target to create a view matrix
+    Vec3 cameraTarget = UpdateCameraAndGetLookAtTarget();
 
     // NOTE(sbalse): Create the view matrix.
-    g_ViewMatrix = Mat4LookAt(g_Camera.m_Position, cameraTarget, CAMERA_UP_DIRECTION);
+    g_ViewMatrix = Mat4LookAt(GetCameraPosition(), cameraTarget, CAMERA_UP_DIRECTION);
 
     // NOTE(sbalse): Loop all faces of our mesh.
     for (const Face& meshFace : g_Mesh.m_Faces)
