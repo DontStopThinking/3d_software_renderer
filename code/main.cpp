@@ -48,6 +48,9 @@ static void Setup()
     SetRenderMethod(RenderMethod::Textured);
     SetShadingMethod(ShadingMethod::FlatShading);
 
+    // NOTE(sbalse): Init the light direction. Z = 1 means light goes from camera into the screen.
+    InitLight(Vec3{ .m_Z = 1 });
+
     // NOTE(sbalse): Init the perspective projection matrix.
     const float aspectX = scast<float>(GetWindowWidth()) / scast<float>(GetWindowHeight());
     const float aspectY = scast<float>(GetWindowHeight()) / scast<float>(GetWindowWidth());
@@ -429,7 +432,7 @@ static void Update()
             {
                 // NOTE(sbalse): Calculate the shade intensity based on how aligned is the face normal and
                 // the inverse of the light ray.
-                const float lightIntensityFactor = -Vec3Dot(normal, g_Light.m_Direction);
+                const float lightIntensityFactor = -Vec3Dot(normal, GetLightDirection());
 
                 // NOTE(sbalse): Calculate triangle color based on the light angle.
                 triangleColor = LightApplyIntensity(meshFace.m_Color, lightIntensityFactor);

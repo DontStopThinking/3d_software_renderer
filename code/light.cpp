@@ -5,10 +5,17 @@
 #include "colorlibrary.h"
 
 // NOTE(sbalse): Init externs.
-constinit Light g_Light =
+constinit static Light g_Light = {};
+
+void InitLight(const Vec3 direction)
 {
-    .m_Direction = { .m_Z = 1 } // NOTE(sbalse): Z = 1 means light goes from camera into the screen.
-};
+    g_Light.m_Direction = direction;
+}
+
+Vec3 GetLightDirection()
+{
+    return g_Light.m_Direction;
+}
 
 u32 LightApplyIntensity(const u32 originalColor, const float percentageFactor)
 {

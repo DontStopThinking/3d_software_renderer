@@ -7,8 +7,8 @@ struct Light
     Vec3 m_Direction;
 };
 
-extern constinit Light g_Light;
-
+void InitLight(const Vec3 direction);
+Vec3 GetLightDirection();
 u32 LightApplyIntensity(const u32 originalColor, const float percentageFactor);
 
 // TODO(sbalse): Smooth shading using Gouraud Shading.
