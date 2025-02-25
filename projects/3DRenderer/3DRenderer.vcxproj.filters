@@ -8,7 +8,6 @@
     <ClCompile Include="..\..\code\triangle.cpp" />
     <ClCompile Include="..\..\code\matrix.cpp" />
     <ClCompile Include="..\..\code\light.cpp" />
-    <ClCompile Include="..\..\code\texture.cpp" />
     <ClCompile Include="..\..\extern\upng-master\upng.c">
       <Filter>extern\upng</Filter>
     </ClCompile>

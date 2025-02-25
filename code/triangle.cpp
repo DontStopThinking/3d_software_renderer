@@ -113,7 +113,7 @@ static void DrawTriangleTexel(
     const Tex2 aUV,
     const Tex2 bUV,
     const Tex2 cUV,
-    const u32* const texture
+    const upng_t* const texture
 )
 {
     const Vec2 p = { scast<float>(x), scast<float>(y) };
@@ -162,10 +162,14 @@ static void DrawTriangleTexel(
     interpolatedU /= interpolatedReciprocalW;
     interpolatedV /= interpolatedReciprocalW;
 
+    // Get the mesh texture width and height.
+    const u32 textureWidth = upng_get_width(texture);
+    const u32 textureHeight = upng_get_height(texture);
+
     // NOTE(sbalse): The interpolated value will be between 0 and 1 so we need to multiply it by the
     // texture width and height to map the UV coordinates to the full texture width and height.
-    const int texelX = std::abs(scast<int>(interpolatedU * g_TextureWidth) % g_TextureWidth);
-    const int texelY = std::abs(scast<int>(interpolatedV * g_TextureHeight) % g_TextureHeight);
+    const int texelX = std::abs(scast<int>(interpolatedU * textureWidth)) % textureWidth;
+    const int texelY = std::abs(scast<int>(interpolatedV * textureHeight)) % textureHeight;
 
     // NOTE(sbalse): Adjust 1/w so that pixels closer to the camera have smaller values of
     // interpolated reciprocal W.
@@ -175,8 +179,11 @@ static void DrawTriangleTexel(
     // in the z-buffer.
     if (interpolatedReciprocalW < GetZBufferAt(x, y))
     {
+        // Get the buffer of colors from the texture.
+        const u32* textureColors = rcast<const u32*>(upng_get_buffer(texture));
+
         // NOTE(sbalse): Draw the corresponding color from our texture.
-        const u32 color = texture[(g_TextureWidth * texelY) + texelX];
+        const u32 color = textureColors[(textureWidth * texelY) + texelX];
         DrawPixel(x, y, color);
 
         // NOTE(sbalse): Update the z-buffer value with the 1/w of this current pixel.
@@ -198,7 +205,8 @@ void DrawTriangle(
     const int y1,
     const int x2,
     const int y2,
-    const u32 color)
+    const u32 color
+)
 {
     DrawLine(x0, y0, x1, y1, color);
     DrawLine(x1, y1, x2, y2, color);
@@ -340,7 +348,7 @@ void DrawTexturedTriangle(
     int x0, int y0, float z0, float w0, float u0, float v0,
     int x1, int y1, float z1, float w1, float u1, float v1,
     int x2, int y2, float z2, float w2, float u2, float v2,
-    const u32* const texture
+    const upng_t* const texture
 )
 {
     // NOTE(sbalse): Loop all the pixels of the triangle to render them based on the color that

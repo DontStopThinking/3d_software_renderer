@@ -3,45 +3,29 @@
 #include <cstdio>
 #include <array>
 #include <vector>
+#include <cassert>
 
 #include "log.h"
 #include "vector.h"
+#include "colorlibrary.h"
+#include "triangle.h"
 
-// NOTE(sbalse): Init externs.
-constinit Mesh g_Mesh =
+inline constexpr int MAX_NUM_MESHES = 10;
+static Mesh g_Meshes[MAX_NUM_MESHES] = {};
+constinit static int g_MeshCount = 0;
+
+static void LoadMeshObjData(const std::string_view objFileName, Mesh* const outMesh)
 {
-    .m_Scale = { 1.0f, 1.0f, 1.0f },
-};
+    assert(outMesh != nullptr);
 
-void LoadCubeMeshData()
-{
-    LOG_INFO("Creating cube mesh...");
-
-    for (int i = 0; i < NUM_CUBE_VERTICES; i++)
-    {
-        const Vec3 cubeVertex = CUBE_VERTICES[i];
-        g_Mesh.m_Vertices.emplace_back(cubeVertex);
-    }
-
-    for (int i = 0; i < NUM_CUBE_FACES; i++)
-    {
-        const Face cubeFace = CUBE_FACES[i];
-        g_Mesh.m_Faces.emplace_back(cubeFace);
-    }
-
-    LOG_INFO("Successfully created cube mesh.");
-}
-
-void LoadObjFileData(const std::string_view fileName)
-{
     std::FILE* file = nullptr;
-    fopen_s(&file, fileName.data(), "r");
+    fopen_s(&file, objFileName.data(), "r");
 
-    LOG_INFO("Loading obj file: %s...", fileName.data());
+    LOG_INFO("Loading obj file: %s...", objFileName.data());
 
     if (!file)
     {
-        LOG_ERROR("Failed to open obj file: %s.", fileName.data());
+        LOG_ERROR("Failed to open obj file: %s.", objFileName.data());
         return;
     }
 
@@ -58,7 +42,7 @@ void LoadObjFileData(const std::string_view fileName)
         {
             Vec3 vertex = {};
             sscanf_s(line.data(), "v %f %f %f", &vertex.m_X, &vertex.m_Y, &vertex.m_Z);
-            g_Mesh.m_Vertices.emplace_back(vertex);
+            outMesh->m_Vertices.emplace_back(vertex);
         }
 
         // NOTE(sbalse): Texture coordinate information.
@@ -94,11 +78,82 @@ void LoadObjFileData(const std::string_view fileName)
                 .m_Color = WHITE,
             };
 
-            g_Mesh.m_Faces.emplace_back(face);
+            outMesh->m_Faces.emplace_back(face);
         }
     }
 
-    LOG_INFO("Successfully loaded obj file: %s.", fileName.data());
+    LOG_INFO("Successfully loaded obj file: %s.", objFileName.data());
 
     std::fclose(file);
+}
+
+static void LoadMeshPNGData(const std::string_view fileName, Mesh* const outMesh)
+{
+    assert(outMesh != nullptr);
+
+    upng_t* pngImage = upng_new_from_file(fileName.data());
+    if (pngImage == nullptr)
+    {
+        LOG_ERROR("Failed to load PNG file: %s", fileName.data());
+        return;
+    }
+
+    upng_decode(pngImage);
+
+    const upng_error error = upng_get_error(pngImage);
+    if (error != UPNG_EOK)
+    {
+        const u32 errorLine = upng_get_error_line(pngImage);
+        LOG_ERROR(
+            "Error while decoding PNG. Error enum value = %d, Line = errorLine",
+            error,
+            errorLine);
+        return;
+    }
+
+    outMesh->m_Texture = pngImage;
+}
+
+void LoadMesh(
+    const std::string_view objFileName,
+    const std::string_view pngFileName,
+    const Vec3 scale,
+    const Vec3 translation,
+    const Vec3 rotation
+)
+{
+    // Load the OBJ
+    LoadMeshObjData(objFileName, &g_Meshes[g_MeshCount]);
+
+    // Load the PNG
+    LoadMeshPNGData(pngFileName, &g_Meshes[g_MeshCount]);
+
+    // Init the scale, translation and rotation
+    g_Meshes[g_MeshCount].m_Scale = scale;
+    g_Meshes[g_MeshCount].m_Translation = translation;
+    g_Meshes[g_MeshCount].m_Rotation = rotation;
+
+    // Add the new mesh to the array of meshes
+    g_MeshCount++;
+}
+
+int GetNumOfMeshes()
+{
+    return g_MeshCount;
+}
+
+Mesh* GetMesh(const int meshIndex)
+{
+    assert(meshIndex < g_MeshCount && "ERROR: Mesh index is greater than total number of available meshes.");
+
+    return &g_Meshes[meshIndex];
+}
+
+void FreeMeshes()
+{
+    for (int i = 0; i < g_MeshCount; i++)
+    {
+        // Free mesh texture.
+        upng_free(g_Meshes[i].m_Texture);
+    }
 }

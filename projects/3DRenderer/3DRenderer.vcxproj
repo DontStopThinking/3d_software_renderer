@@ -18,7 +18,6 @@
     <ClCompile Include="..\..\code\main.cpp" />
     <ClCompile Include="..\..\code\matrix.cpp" />
     <ClCompile Include="..\..\code\mesh.cpp" />
-    <ClCompile Include="..\..\code\texture.cpp" />
     <ClCompile Include="..\..\code\triangle.cpp" />
     <ClCompile Include="..\..\code\vector.cpp" />
     <ClCompile Include="..\..\extern\upng-master\upng.c" />
