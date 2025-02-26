@@ -261,6 +261,210 @@ static void ProcessInput()
     RotateCameraPitch(mouseY * cameraSensitivity);
 }
 
+// NOTE(sbalse): Process the graphics pipeline stages for all the mesh triangles.
+//
+// Model space   <-- original mesh vertices
+// |
+// |---> World space   <-- multiply by world matrix
+//      |
+//      |---> Camera space   <-- multiply by view matrix
+//          |
+//          |---> Clipping      <-- clip against the 6 frustum planes
+//                |
+//                |---> Projection   <-- multiply by projection matrix
+//                      |
+//                      |---> Image space  <-- apply perspective divide
+//                            |
+//                            |---> Screen space   <-- ready to render
+//
+static void ProcessGraphicsPipelineStages(const Mesh* const mesh)
+{
+    // NOTE(sbalse): Create scale, translation, and rotation matrices that will be
+    // multiplied with our mesh vertices.
+    const Mat4 scaleMatrix = Mat4MakeScale(
+        mesh->m_Scale.m_X,
+        mesh->m_Scale.m_Y,
+        mesh->m_Scale.m_Z
+    );
+    const Mat4 translationMatrix = Mat4MakeTranslation(
+        mesh->m_Translation.m_X,
+        mesh->m_Translation.m_Y,
+        mesh->m_Translation.m_Z
+    );
+    const Mat4 rotationMatrixX = Mat4MakeRotationX(mesh->m_Rotation.m_X);
+    const Mat4 rotationMatrixY = Mat4MakeRotationY(mesh->m_Rotation.m_Y);
+    const Mat4 rotationMatrixZ = Mat4MakeRotationZ(mesh->m_Rotation.m_Z);
+
+    // NOTE(sbalse): Create a "World Matrix" combining scale, rotation and translation
+    // matrices of the mesh.
+    g_WorldMatrix = MAT4_IDENTITY;
+    g_WorldMatrix = Mat4MulMat4(scaleMatrix, g_WorldMatrix);
+    g_WorldMatrix = Mat4MulMat4(rotationMatrixX, g_WorldMatrix);
+    g_WorldMatrix = Mat4MulMat4(rotationMatrixY, g_WorldMatrix);
+    g_WorldMatrix = Mat4MulMat4(rotationMatrixZ, g_WorldMatrix);
+    g_WorldMatrix = Mat4MulMat4(translationMatrix, g_WorldMatrix);
+
+    // NOTE(sbalse): Update camera look at target to create a view matrix
+    const Vec3 cameraTarget = UpdateCameraAndGetLookAtTarget();
+
+    // NOTE(sbalse): Create the view matrix.
+    g_ViewMatrix = Mat4LookAt(GetCameraPosition(), cameraTarget, CAMERA_UP_DIRECTION);
+
+    // NOTE(sbalse): Loop all faces of our mesh.
+    for (const Face& meshFace : mesh->m_Faces)
+    {
+        // NOTE(sbalse): The 3 vertices that make up a triangle of a face.
+        const Vec3 faceVertices[3] =
+        {
+            mesh->m_Vertices[meshFace.m_A],
+            mesh->m_Vertices[meshFace.m_B],
+            mesh->m_Vertices[meshFace.m_C],
+        };
+
+        Vec4 transformedVertices[3] = {};
+
+        // NOTE(sbalse): Loop over vertices of the face.
+        for (int vertexIndex = 0; vertexIndex < 3; vertexIndex++)
+        {
+            Vec4 transformedVertex = Vec4FromVec3(faceVertices[vertexIndex]);
+
+            // NOTE(sbalse): Transform our vertex by multiplying it with our world matrix.
+            transformedVertex = Mat4MulVec4(g_WorldMatrix, transformedVertex);
+
+            // NOTE(sbalse): Multiply the view matrix by the original vector to transform
+            // our scene to camera space.
+            transformedVertex = Mat4MulVec4(g_ViewMatrix, transformedVertex);
+
+            // NOTE(sbalse): Save the transformed vertex.
+            transformedVertices[vertexIndex] = transformedVertex;
+        }
+
+        const Vec3 faceNormal = GetTriangleNormal(transformedVertices);
+
+        // NOTE(sbalse): Do backface culling.
+        if (GetCullMethod() == CullMethod::Backface)
+        {
+            // NOTE(sbalse): Calculate the triangle face normal.
+
+            // NOTE(sbalse): Find the vector between a point in the triangle and the camera origin.
+            // We directly use ORIGIN here [i.e. (0, 0, 0)] since our camera is always meant to be the
+            // origin of our world.
+            const Vec3 cameraRay = Vec3Sub(ORIGIN, Vec3FromVec4(transformedVertices[0]));
+
+            // NOTE(sbalse): Use dot product to calculate how aligned the face normal is with the camera
+            // ray.
+            const float cameraAlignmentWithFaceNormal = Vec3Dot(faceNormal, cameraRay);
+
+            // NOTE(sbalse): If the normal is not visible to the camera then don't draw this face. AKA,
+            // cull this face.
+            if (cameraAlignmentWithFaceNormal < 0)
+            {
+                continue;
+            }
+        }
+
+        // NOTE(sbalse): Do clipping before projecting the vertices.
+        // NOTE(sbalse): Create a polygon to be clipped from the original transformed vertices.
+        Polygon polygon = CreatePolygonFromTriangle(
+            Vec3FromVec4(transformedVertices[0]),
+            Vec3FromVec4(transformedVertices[1]),
+            Vec3FromVec4(transformedVertices[2]),
+            meshFace.m_AUV,
+            meshFace.m_BUV,
+            meshFace.m_CUV
+        );
+
+        // NOTE(sbalse): Clip the polygon and get a new polygon with potentially new vertices.
+        ClipPolygon(&polygon);
+
+        Triangle trianglesAfterClipping[MAX_NUM_POLYGON_TRIANGLES] = {};
+        int numTrianglesAfterClipping = 0;
+
+        // NOTE(sbalse): After clipping, we need to break the clipping polygon back into triangles.
+        TrianglesFromPolygon(&polygon, trianglesAfterClipping, &numTrianglesAfterClipping);
+
+        // NOTE(sbalse): Loop all the assembled triangles after clipping.
+        for (int t = 0; t < numTrianglesAfterClipping; t++)
+        {
+            const Triangle triangleAfterClipping = trianglesAfterClipping[t];
+
+            Vec4 projectedPoints[3] = {};
+
+            // NOTE(sbalse): Project vertices of the face.
+            for (int vertexIndex = 0; vertexIndex < 3; vertexIndex++)
+            {
+                // NOTE(sbalse): Project the current vertex.
+                projectedPoints[vertexIndex] = Mat4MulVec4Project(
+                    g_ProjMatrix,
+                    triangleAfterClipping.m_Points[vertexIndex]);
+
+                // NOTE(sbalse): Invert the y values to account for our flipped y axis.
+                projectedPoints[vertexIndex].m_Y *= -1;
+
+                // NOTE(sbalse): Transform into screen space.
+                projectedPoints[vertexIndex].m_X *= (GetWindowWidth() / 2.0f);
+                projectedPoints[vertexIndex].m_Y *= (GetWindowHeight() / 2.0f);
+
+                // NOTE(sbalse): Translate the projected point to the middle of the screen.
+                projectedPoints[vertexIndex].m_X += (GetWindowWidth() / 2.0f);
+                projectedPoints[vertexIndex].m_Y += (GetWindowHeight() / 2.0f);
+            }
+
+            u32 triangleColor = meshFace.m_Color;
+
+            if (GetShadingMethod() == ShadingMethod::FlatShading)
+            {
+                // NOTE(sbalse): Calculate the shade intensity based on how aligned is the face normal and
+                // the inverse of the light ray.
+                const float lightIntensityFactor = -Vec3Dot(faceNormal, GetLightDirection());
+
+                // NOTE(sbalse): Calculate triangle color based on the light angle.
+                triangleColor = LightApplyIntensity(meshFace.m_Color, lightIntensityFactor);
+            }
+
+            // NOTE(sbalse): Finally create the final triangle which we will render.
+            const Triangle triangleToRender =
+            {
+                .m_Points =
+                {
+                    {
+                        projectedPoints[0].m_X,
+                        projectedPoints[0].m_Y,
+                        projectedPoints[0].m_Z,
+                        projectedPoints[0].m_W
+                    },
+                    {
+                        projectedPoints[1].m_X,
+                        projectedPoints[1].m_Y,
+                        projectedPoints[1].m_Z,
+                        projectedPoints[1].m_W
+                    },
+                    {
+                        projectedPoints[2].m_X,
+                        projectedPoints[2].m_Y,
+                        projectedPoints[2].m_Z,
+                        projectedPoints[2].m_W
+                    },
+                },
+                .m_TexCoords =
+                {
+                    { triangleAfterClipping.m_TexCoords[0] },
+                    { triangleAfterClipping.m_TexCoords[1] },
+                    { triangleAfterClipping.m_TexCoords[2] },
+                },
+                .m_Color = triangleColor,
+                .m_Texture = mesh->m_Texture,
+            };
+
+            if (g_NumTrianglesToRender < MAX_NUM_TRIANGLES_TO_RENDER)
+            {
+                // NOTE(sbalse): Save the projected triangle in the array of triangles to render.
+                g_TrianglesToRender[g_NumTrianglesToRender++] = triangleToRender;
+            }
+        }
+    }
+}
+
 static void Update()
 {
     const u32 currentUpdateTimeMS = SDL_GetTicks();
@@ -286,6 +490,7 @@ static void Update()
 
         if (!g_Paused)
         {
+            // NOTE(sbalse): Will need to remove the const from currentMesh before uncommenting the following code.
             // currentMesh->m_Rotation.m_X += 0.6f * g_DeltaTimeSeconds;
             // currentMesh->m_Rotation.m_Y += 0.6f * g_DeltaTimeSeconds;
             // currentMesh->m_Rotation.m_Z += 0.6f * g_DeltaTimeSeconds;
@@ -297,200 +502,7 @@ static void Update()
             // currentMesh->m_Translation.m_X += 0.6 * g_DeltaTimeSeconds;
         }
 
-        // NOTE(sbalse): Create scale, translation, and rotation matrices that will be
-        // multiplied with our mesh vertices.
-        const Mat4 scaleMatrix = Mat4MakeScale(
-            currentMesh->m_Scale.m_X,
-            currentMesh->m_Scale.m_Y,
-            currentMesh->m_Scale.m_Z
-        );
-        const Mat4 translationMatrix = Mat4MakeTranslation(
-            currentMesh->m_Translation.m_X,
-            currentMesh->m_Translation.m_Y,
-            currentMesh->m_Translation.m_Z
-        );
-        const Mat4 rotationMatrixX = Mat4MakeRotationX(currentMesh->m_Rotation.m_X);
-        const Mat4 rotationMatrixY = Mat4MakeRotationY(currentMesh->m_Rotation.m_Y);
-        const Mat4 rotationMatrixZ = Mat4MakeRotationZ(currentMesh->m_Rotation.m_Z);
-
-        // NOTE(sbalse): Create a "World Matrix" combining scale, rotation and translation
-        // matrices of the mesh.
-        g_WorldMatrix = MAT4_IDENTITY;
-        g_WorldMatrix = Mat4MulMat4(scaleMatrix, g_WorldMatrix);
-        g_WorldMatrix = Mat4MulMat4(rotationMatrixX, g_WorldMatrix);
-        g_WorldMatrix = Mat4MulMat4(rotationMatrixY, g_WorldMatrix);
-        g_WorldMatrix = Mat4MulMat4(rotationMatrixZ, g_WorldMatrix);
-        g_WorldMatrix = Mat4MulMat4(translationMatrix, g_WorldMatrix);
-
-        // NOTE(sbalse): Update camera look at target to create a view matrix
-        Vec3 cameraTarget = UpdateCameraAndGetLookAtTarget();
-
-        // NOTE(sbalse): Create the view matrix.
-        g_ViewMatrix = Mat4LookAt(GetCameraPosition(), cameraTarget, CAMERA_UP_DIRECTION);
-
-        // NOTE(sbalse): Loop all faces of our mesh.
-        for (const Face& meshFace : currentMesh->m_Faces)
-        {
-            // NOTE(sbalse): The 3 vertices that make up a triangle of a face.
-            const Vec3 faceVertices[3] =
-            {
-                currentMesh->m_Vertices[meshFace.m_A],
-                currentMesh->m_Vertices[meshFace.m_B],
-                currentMesh->m_Vertices[meshFace.m_C],
-            };
-
-            Vec4 transformedVertices[3] = {};
-
-            // NOTE(sbalse): Transform vertices of the face.
-            for (int vertexIndex = 0; vertexIndex < 3; vertexIndex++)
-            {
-                Vec4 transformedVertex = Vec4FromVec3(faceVertices[vertexIndex]);
-
-                // NOTE(sbalse): Transform our vertex by multiplying it with our world matrix.
-                transformedVertex = Mat4MulVec4(g_WorldMatrix, transformedVertex);
-
-                // NOTE(sbalse): Multiply the view matrix by the original vector to transform
-                // our scene to camera space.
-                transformedVertex = Mat4MulVec4(g_ViewMatrix, transformedVertex);
-
-                // NOTE(sbalse): Save the transformed vertex.
-                transformedVertices[vertexIndex] = transformedVertex;
-            }
-
-            const Vec3 vectorA = Vec3FromVec4(transformedVertices[0]); /*   A   */
-            const Vec3 vectorB = Vec3FromVec4(transformedVertices[1]); /*  / \  */
-            const Vec3 vectorC = Vec3FromVec4(transformedVertices[2]); /* C---B */
-
-            Vec3 vectorAToB = Vec3Sub(vectorB, vectorA); // NOTE(sbalse): Get vector A to B.
-            Vec3Normalize(&vectorAToB);
-            Vec3 vectorAToC = Vec3Sub(vectorC, vectorA); // NOTE(sbalse): Get vector A to C.
-            Vec3Normalize(&vectorAToC);
-
-            // NOTE(sbalse): Get the face normal using cross-product.
-            // NOTE(sbalse): We're using LEFT-HANDED co-ordinate system, so cross product should be
-            // calculated using (AB, AC). In right-handed system, it would have been using (AC, AB);
-            Vec3 normal = Vec3Cross(vectorAToB, vectorAToC);
-            Vec3Normalize(&normal);
-
-            // NOTE(sbalse): Find the vector between a point in the triangle and the camera origin.
-            // We directly use ORIGIN here [i.e. (0, 0, 0)] since our camera is always meant to be the
-            // origin of our world.
-            const Vec3 cameraRay = Vec3Sub(ORIGIN, vectorA);
-
-            // NOTE(sbalse): Use dot product to calculate how aligned the face normal is with the camera
-            // ray.
-            const float cameraAlignmentWithFaceNormal = Vec3Dot(normal, cameraRay);
-
-            // NOTE(sbalse): Do backface culling.
-            if (GetCullMethod() == CullMethod::Backface)
-            {
-                // NOTE(sbalse): If the normal is not visible to the camera then don't draw this face. AKA,
-                // cull this face.
-                if (cameraAlignmentWithFaceNormal < 0)
-                {
-                    continue;
-                }
-            }
-
-            // NOTE(sbalse): Do clipping before projecting the vertices.
-            // NOTE(sbalse): Create a polygon to be clipped from the original transformed vertices.
-            Polygon polygon = CreatePolygonFromTriangle(
-                Vec3FromVec4(transformedVertices[0]),
-                Vec3FromVec4(transformedVertices[1]),
-                Vec3FromVec4(transformedVertices[2]),
-                meshFace.m_AUV,
-                meshFace.m_BUV,
-                meshFace.m_CUV
-            );
-
-            // NOTE(sbalse): Clip the polygon and get a new polygon with potentially new vertices.
-            ClipPolygon(&polygon);
-
-            Triangle trianglesAfterClipping[MAX_NUM_POLYGON_TRIANGLES] = {};
-            int numTrianglesAfterClipping = 0;
-
-            // NOTE(sbalse): After clipping, we need to break the clipping polygon back into triangles.
-            TrianglesFromPolygon(&polygon, trianglesAfterClipping, &numTrianglesAfterClipping);
-
-            // NOTE(sbalse): Loop all the assembled triangles after clipping.
-            for (int t = 0; t < numTrianglesAfterClipping; t++)
-            {
-                const Triangle triangleAfterClipping = trianglesAfterClipping[t];
-
-                Vec4 projectedPoints[3] = {};
-
-                // NOTE(sbalse): Project vertices of the face.
-                for (int vertexIndex = 0; vertexIndex < 3; vertexIndex++)
-                {
-                    // NOTE(sbalse): Project the current vertex.
-                    projectedPoints[vertexIndex] = Mat4MulVec4Project(
-                        g_ProjMatrix,
-                        triangleAfterClipping.m_Points[vertexIndex]);
-
-                    // NOTE(sbalse): Invert the y values to account for our flipped y axis.
-                    projectedPoints[vertexIndex].m_Y *= -1;
-
-                    // NOTE(sbalse): Scale into the view.
-                    projectedPoints[vertexIndex].m_X *= (GetWindowWidth() / 2.0f);
-                    projectedPoints[vertexIndex].m_Y *= (GetWindowHeight() / 2.0f);
-
-                    // NOTE(sbalse): Translate the projected point to the middle of the screen.
-                    projectedPoints[vertexIndex].m_X += (GetWindowWidth() / 2.0f);
-                    projectedPoints[vertexIndex].m_Y += (GetWindowHeight() / 2.0f);
-                }
-
-                u32 triangleColor = meshFace.m_Color;
-
-                if (GetShadingMethod() == ShadingMethod::FlatShading)
-                {
-                    // NOTE(sbalse): Calculate the shade intensity based on how aligned is the face normal and
-                    // the inverse of the light ray.
-                    const float lightIntensityFactor = -Vec3Dot(normal, GetLightDirection());
-
-                    // NOTE(sbalse): Calculate triangle color based on the light angle.
-                    triangleColor = LightApplyIntensity(meshFace.m_Color, lightIntensityFactor);
-                }
-
-                const Triangle triangleToRender =
-                {
-                    .m_Points =
-                    {
-                        {
-                            projectedPoints[0].m_X,
-                            projectedPoints[0].m_Y,
-                            projectedPoints[0].m_Z,
-                            projectedPoints[0].m_W
-                        },
-                        {
-                            projectedPoints[1].m_X,
-                            projectedPoints[1].m_Y,
-                            projectedPoints[1].m_Z,
-                            projectedPoints[1].m_W
-                        },
-                        {
-                            projectedPoints[2].m_X,
-                            projectedPoints[2].m_Y,
-                            projectedPoints[2].m_Z,
-                            projectedPoints[2].m_W
-                        },
-                    },
-                    .m_TexCoords =
-                    {
-                        { triangleAfterClipping.m_TexCoords[0] },
-                        { triangleAfterClipping.m_TexCoords[1] },
-                        { triangleAfterClipping.m_TexCoords[2] },
-                    },
-                    .m_Color = triangleColor,
-                    .m_Texture = currentMesh->m_Texture,
-                };
-
-                if (g_NumTrianglesToRender < MAX_NUM_TRIANGLES_TO_RENDER)
-                {
-                    // NOTE(sbalse): Save the projected triangle in the array of triangles to render.
-                    g_TrianglesToRender[g_NumTrianglesToRender++] = triangleToRender;
-                }
-            }
-        }
+        ProcessGraphicsPipelineStages(currentMesh);
     }
 }
 

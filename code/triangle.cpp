@@ -453,3 +453,23 @@ void DrawTexturedTriangle(
         }
     }
 }
+
+Vec3 GetTriangleNormal(const Vec4 vertices[3])
+{
+    const Vec3 vectorA = Vec3FromVec4(vertices[0]); /*   A   */
+    const Vec3 vectorB = Vec3FromVec4(vertices[1]); /*  / \  */
+    const Vec3 vectorC = Vec3FromVec4(vertices[2]); /* C---B */
+
+    Vec3 vectorAToB = Vec3Sub(vectorB, vectorA); // NOTE(sbalse): Get vector A to B.
+    Vec3Normalize(&vectorAToB);
+    Vec3 vectorAToC = Vec3Sub(vectorC, vectorA); // NOTE(sbalse): Get vector A to C.
+    Vec3Normalize(&vectorAToC);
+
+    // NOTE(sbalse): Get the face normal using cross-product.
+    // NOTE(sbalse): We're using LEFT-HANDED co-ordinate system, so cross product should be
+    // calculated using (AB, AC). In right-handed system, it would have been using (AC, AB);
+    Vec3 normal = Vec3Cross(vectorAToB, vectorAToC);
+    Vec3Normalize(&normal);
+
+    return normal;
+}

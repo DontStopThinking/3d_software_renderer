@@ -51,3 +51,5 @@ void DrawTexturedTriangle(
     int x2, int y2, float z2, float w2, float u2, float v2,
     const upng_t* const texture
 );
+
+Vec3 GetTriangleNormal(const Vec4 vertices[3]);
