@@ -5,7 +5,7 @@ Writing a 3D software renderer to learn the basics of 3D graphics.
 Uses SDL for window and input management and for drawing pixels to a color buffer.
 
 <img src="repoassets/screenshot1.gif" width="410"> <img src="repoassets/screenshot2.gif" width="410">
-<img src="repoassets/screenshot3.png">
+<img src="repoassets/screenshot3.png" width="410">
 
 ## Compiling and Running
 Follow these steps to build and run the project:
