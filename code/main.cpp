@@ -61,7 +61,7 @@ static void Setup()
     const float aspectY = scast<float>(GetWindowHeight()) / scast<float>(GetWindowWidth());
     constexpr float FOV_Y_RADIANS = M_PI / 3.0f; // NOTE(sbalse): Vertical FOV. Same as 180 / 3 or 60 deg.
     const float fovXRadians = std::atanf(std::tanf(FOV_Y_RADIANS / 2.0f) * aspectX) * 2.0f;
-    constexpr float Z_NEAR = 0.0f;
+    constexpr float Z_NEAR = 0.3f;
     constexpr float Z_FAR = 20.0f;
     g_ProjMatrix = Mat4MakePerspective(FOV_Y_RADIANS, aspectY, Z_NEAR, Z_FAR);
 

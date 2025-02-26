@@ -143,7 +143,7 @@ Mat4 Mat4MakePerspective(const float fov, const float aspect, const float znear,
     result.m_Values[0][0] = aspect * (1 / std::tanf(fov / 2.0f));
     result.m_Values[1][1] = 1 / std::tanf(fov / 2.0f);
     result.m_Values[2][2] = zfar / (zfar - znear);
-    result.m_Values[3][3] = (-zfar * znear) / (zfar - znear);
+    result.m_Values[2][3] = (-zfar * znear) / (zfar - znear);
     result.m_Values[3][2] = 1.0f;
     return result;
 }
