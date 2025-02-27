@@ -22,22 +22,22 @@ extern "C"
 #include "triangle.h"
 
 // NOTE(sbalse): "g_" prefix = file static variables.
-static constinit bool g_IsRunning = false;
-static constinit u32 g_PreviousUpdateTimeMS = 0u; // NOTE(sbalse): Time taken by the previous update in milliseconds.
-static constinit float g_DeltaTimeSeconds = 0.0f;
+constinit static bool g_IsRunning = false;
+constinit static u32 g_PreviousUpdateTimeMS = 0u; // NOTE(sbalse): Time taken by the previous update in milliseconds.
+constinit static float g_DeltaTimeSeconds = 0.0f;
 
 inline constexpr size_t MAX_NUM_TRIANGLES_TO_RENDER = 10000;
-static constinit size_t g_NumTrianglesToRender = 0;
-static constinit std::array<Triangle, MAX_NUM_TRIANGLES_TO_RENDER> g_TrianglesToRender = {};
+constinit static size_t g_NumTrianglesToRender = 0;
+constinit static std::array<Triangle, MAX_NUM_TRIANGLES_TO_RENDER> g_TrianglesToRender = {};
 
 // TODO(sbalse): IMGUI
-static constinit bool g_Paused = false;
-static constinit bool g_PrintFPS = false;
-static constinit bool g_DisplayGrid = false;
+constinit static bool g_Paused = false;
+constinit static bool g_PrintFPS = false;
+constinit static bool g_DisplayGrid = false;
 
-static constinit Mat4 g_WorldMatrix = {};
-static constinit Mat4 g_ProjMatrix = {};
-static constinit Mat4 g_ViewMatrix = {};
+constinit static Mat4 g_WorldMatrix = {};
+constinit static Mat4 g_ProjMatrix = {};
+constinit static Mat4 g_ViewMatrix = {};
 
 inline constexpr Vec3 CAMERA_UP_DIRECTION = { 0, 1, 0 };
 
@@ -396,7 +396,8 @@ static void ProcessGraphicsPipelineStages(const Mesh* const mesh)
                 // NOTE(sbalse): Project the current vertex.
                 projectedPoints[vertexIndex] = Mat4MulVec4Project(
                     g_ProjMatrix,
-                    triangleAfterClipping.m_Points[vertexIndex]);
+                    triangleAfterClipping.m_Points[vertexIndex]
+                );
 
                 // NOTE(sbalse): Invert the y values to account for our flipped y axis.
                 projectedPoints[vertexIndex].m_Y *= -1;
@@ -545,7 +546,8 @@ static void Render()
                 currentTriangle.m_Points[2].m_Z,
                 currentTriangle.m_Points[2].m_W,
                 // NOTE(sbalse): The color.
-                currentTriangle.m_Color);
+                currentTriangle.m_Color
+            );
         }
 
         if (currentRenderMethod == RenderMethod::WireVertex)
@@ -556,19 +558,22 @@ static void Render()
                 scast<int>(currentTriangle.m_Points[0].m_Y - 3),
                 6,
                 6,
-                RED);
+                RED
+            );
             DrawRectangle(
                 scast<int>(currentTriangle.m_Points[1].m_X - 3),
                 scast<int>(currentTriangle.m_Points[1].m_Y - 3),
                 6,
                 6,
-                RED);
+                RED
+            );
             DrawRectangle(
                 scast<int>(currentTriangle.m_Points[2].m_X - 3),
                 scast<int>(currentTriangle.m_Points[2].m_Y - 3),
                 6,
                 6,
-                RED);
+                RED
+            );
         }
 
         // NOTE(sbalse): Draw textured triangle.
@@ -598,7 +603,8 @@ static void Render()
                 currentTriangle.m_TexCoords[2].m_U,
                 currentTriangle.m_TexCoords[2].m_V,
                 // NOTE(sbalse): The texture.
-                currentTriangle.m_Texture);
+                currentTriangle.m_Texture
+            );
         }
 
         if (currentRenderMethod == RenderMethod::Wire
@@ -614,7 +620,8 @@ static void Render()
                 scast<int>(currentTriangle.m_Points[1].m_Y),
                 scast<int>(currentTriangle.m_Points[2].m_X),
                 scast<int>(currentTriangle.m_Points[2].m_Y),
-                WHITE);
+                WHITE
+            );
         }
     }
 
