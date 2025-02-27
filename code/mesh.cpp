@@ -117,8 +117,8 @@ static void LoadMeshPNGData(const std::string_view fileName, Mesh* const outMesh
 void LoadMesh(
     const std::string_view objFileName,
     const std::string_view pngFileName,
-    const Vec3 scale,
     const Vec3 translation,
+    const Vec3 scale,
     const Vec3 rotation
 )
 {

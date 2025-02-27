@@ -68,10 +68,10 @@ static void Setup()
     // NOTE(sbalse): Initialize clipping frustum planes with a point and a normal.
     InitFrustumPlanes(fovXRadians, FOV_Y_RADIANS, Z_NEAR, Z_FAR);
 
-    LoadMesh("assets/runway.obj", "assets/runway.png", Vec3{ 1, 1, 1 }, Vec3{ 0, -1.5, +23 }, Vec3{});
-    LoadMesh("assets/f22.obj", "assets/f22.png", Vec3{ 1, 1, 1 }, Vec3{ 0, -1.3, +5 }, Vec3{ 0, -M_PI / 2, 0 });
-    LoadMesh("assets/efa.obj", "assets/efa.png", Vec3{ 1, 1, 1 }, Vec3{ -2, -1.3, +9 }, Vec3{ 0, -M_PI / 2, 0 });
-    LoadMesh("assets/f117.obj", "assets/f117.png", Vec3{ 1, 1, 1 }, Vec3{ +2, -1.3, +9 }, Vec3{ 0, -M_PI / 2, 0 });
+    LoadMesh("assets/runway.obj", "assets/runway.png", Vec3{ 0, -1.5, +23 }, Vec3{ 1, 1, 1 }, Vec3{});
+    LoadMesh("assets/f22.obj", "assets/f22.png", Vec3{ 0, -1.3, +5 }, Vec3{ 1, 1, 1 }, Vec3{ 0, -M_PI / 2, 0 });
+    LoadMesh("assets/efa.obj", "assets/efa.png", Vec3{ -2, -1.3, +9 }, Vec3{ 1, 1, 1 }, Vec3{ 0, -M_PI / 2, 0 });
+    LoadMesh("assets/f117.obj", "assets/f117.png", Vec3{ +2, -1.3, +9 }, Vec3{ 1, 1, 1 }, Vec3{ 0, -M_PI / 2, 0 });
 }
 
 static void ProcessInput()
