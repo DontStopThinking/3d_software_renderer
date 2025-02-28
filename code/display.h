@@ -5,12 +5,6 @@
 #include "common.h"
 #include "colorlibrary.h"
 
-// NOTE(sbalse): We will update and render these many frames in 1 second.
-inline constexpr u32 FPS = 30;
-// NOTE(sbalse): How many milliseconds each frame should take. Using 1000 as FPS is in seconds and
-// this value is in milliseconds.
-inline constexpr float FRAME_TARGET_TIME_MS = (1000.0f / FPS);
-
 struct ColorBuffer
 {
     u32* m_Buffer;

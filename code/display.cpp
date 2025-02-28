@@ -76,7 +76,7 @@ bool InitializeWindow(const std::string_view windowTitle)
     }
 
     // NOTE(sbalse): Create a SDL renderer.
-    g_Renderer = SDL_CreateRenderer(g_Window, -1, 0);
+    g_Renderer = SDL_CreateRenderer(g_Window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     if (!g_Renderer)
     {
         LOG_ERROR("Failed to create an SDL renderer.");

@@ -21,10 +21,7 @@ extern "C"
 #include "clipping.h"
 #include "triangle.h"
 
-// NOTE(sbalse): "g_" prefix = file static variables.
 constinit static bool g_IsRunning = false;
-constinit static u32 g_PreviousUpdateTimeMS = 0u; // NOTE(sbalse): Time taken by the previous update in milliseconds.
-constinit static float g_DeltaTimeSeconds = 0.0f;
 
 inline constexpr size_t MAX_NUM_TRIANGLES_TO_RENDER = 10000;
 constinit static size_t g_NumTrianglesToRender = 0;
@@ -35,11 +32,17 @@ constinit static bool g_Paused = false;
 constinit static bool g_PrintFPS = false;
 constinit static bool g_DisplayGrid = false;
 
+constinit static int g_UpdateCallCount = 0;
+
 constinit static Mat4 g_WorldMatrix = {};
 constinit static Mat4 g_ProjMatrix = {};
 constinit static Mat4 g_ViewMatrix = {};
 
 inline constexpr Vec3 CAMERA_UP_DIRECTION = { 0, 1, 0 };
+
+// NOTE(sbalse): Fixed timestep. Update() should run this many times per second.
+inline constexpr u32 TARGET_UPDATES_PER_SECOND = 30;
+inline constexpr float FIXED_UPDATE_TIMESTEP = 1.0f / TARGET_UPDATES_PER_SECOND;
 
 static void Setup()
 {
@@ -216,39 +219,41 @@ static void ProcessInput()
         }
     }
 
-    const u8* keystate = SDL_GetKeyboardState(nullptr);
+    const u8* const keystate = SDL_GetKeyboardState(nullptr);
     Vec3 cameraPos = GetCameraPosition();
-    Vec3 cameraDir = GetCameraDirection();
+    const Vec3 cameraDir = GetCameraDirection();
+
     // Obtain camera's right vector by doing cross product of current facing direction with the
     // world's UP vector.
     Vec3 cameraRight = Vec3Cross(cameraDir, Vec3{ 0, 1, 0 });
     Vec3Normalize(&cameraRight);
 
+    // TODO(sbalse): Move movement inside Update() and make use of the deltaTime there.
     if (keystate[SDL_SCANCODE_W])
     {
-        cameraPos = Vec3Add(cameraPos, Vec3Mul(cameraDir, 5.0f * g_DeltaTimeSeconds));
+        cameraPos = Vec3Add(cameraPos, Vec3Mul(cameraDir, 0.2f));
     }
     else if (keystate[SDL_SCANCODE_S])
     {
-        cameraPos = Vec3Add(cameraPos, Vec3Mul(cameraDir, -5.0f * g_DeltaTimeSeconds));
+        cameraPos = Vec3Add(cameraPos, Vec3Mul(cameraDir, -0.2f));
     }
 
     if (keystate[SDL_SCANCODE_A])
     {
-        cameraPos = Vec3Add(cameraPos, Vec3Mul(cameraRight, 5.0f * g_DeltaTimeSeconds));
+        cameraPos = Vec3Add(cameraPos, Vec3Mul(cameraRight, 0.2f));
     }
     else if (keystate[SDL_SCANCODE_D])
     {
-        cameraPos = Vec3Add(cameraPos, Vec3Mul(cameraRight, -5.0f * g_DeltaTimeSeconds));
+        cameraPos = Vec3Add(cameraPos, Vec3Mul(cameraRight, -0.2f));
     }
 
     if (keystate[SDL_SCANCODE_Q])
     {
-        cameraPos.m_Y += 5.0f * g_DeltaTimeSeconds;
+        cameraPos.m_Y += 0.2f;
     }
     else if (keystate[SDL_SCANCODE_E])
     {
-        cameraPos.m_Y -= 5.0f * g_DeltaTimeSeconds;
+        cameraPos.m_Y -= 0.2f;
     }
 
     UpdateCameraPosition(cameraPos);
@@ -466,21 +471,16 @@ static void ProcessGraphicsPipelineStages(const Mesh* const mesh)
     }
 }
 
-static void Update()
+static void Update(const float deltaTime)
 {
-    const u32 currentUpdateTimeMS = SDL_GetTicks();
-    const u32 frameDuration = currentUpdateTimeMS - g_PreviousUpdateTimeMS;
-
-    g_DeltaTimeSeconds = frameDuration / 1000.0f;
-    g_PreviousUpdateTimeMS = currentUpdateTimeMS;
-
-    const int timeToWait = scast<int>(FRAME_TARGET_TIME_MS) - frameDuration;
-    if (timeToWait > 0 && timeToWait <= FRAME_TARGET_TIME_MS)
+    if (g_PrintFPS)
     {
-        SDL_Delay(timeToWait);
+        g_UpdateCallCount++;
     }
 
+    // NOTE(sbalse): Clear the list of triangles to render every frame loop.
     g_NumTrianglesToRender = 0;
+    g_TrianglesToRender = {};
 
     const int numOfMeshes = GetNumOfMeshes();
 
@@ -492,15 +492,15 @@ static void Update()
         if (!g_Paused)
         {
             // NOTE(sbalse): Will need to remove the const from currentMesh before uncommenting the following code.
-            // currentMesh->m_Rotation.m_X += 0.6f * g_DeltaTimeSeconds;
-            // currentMesh->m_Rotation.m_Y += 0.6f * g_DeltaTimeSeconds;
-            // currentMesh->m_Rotation.m_Z += 0.6f * g_DeltaTimeSeconds;
+            // currentMesh->m_Rotation.m_X += 0.6f * deltaTime;
+            // currentMesh->m_Rotation.m_Y += 0.6f * deltaTime;
+            // currentMesh->m_Rotation.m_Z += 0.6f * deltaTime;
 
-            // currentMesh->m_Scale.m_X += 0.2 * g_DeltaTimeSeconds;
-            // currentMesh->m_Scale.m_Y += 0.2 * g_DeltaTimeSeconds;
-            // currentMesh->m_Scale.m_Z += 0.2 * g_DeltaTimeSeconds;
+            // currentMesh->m_Scale.m_X += 0.2 * deltaTime;
+            // currentMesh->m_Scale.m_Y += 0.2 * deltaTime;
+            // currentMesh->m_Scale.m_Z += 0.2 * deltaTime;
 
-            // currentMesh->m_Translation.m_X += 0.6 * g_DeltaTimeSeconds;
+            // currentMesh->m_Translation.m_X += 0.6 * deltaTime;
         }
 
         ProcessGraphicsPipelineStages(currentMesh);
@@ -625,9 +625,6 @@ static void Render()
         }
     }
 
-    // NOTE(sbalse): Clear the list of triangles to render every frame loop.
-    g_TrianglesToRender = {};
-
     const RenderBufferMethod currentRenderBufferMethod = GetRenderBufferMethod();
     if (currentRenderBufferMethod == RenderBufferMethod::ColorBuffer)
     {
@@ -664,15 +661,24 @@ int main(int argc, char* argv[])
 
     u32 prevTime = SDL_GetTicks();
     u32 printTime = prevTime;
+    float accumulatedTime = 0.0f;
     int numFrames = 0;
 
     while (g_IsRunning)
     {
         const u32 currTime = SDL_GetTicks();
+        const float deltaTime = (currTime - prevTime) / 1000.0f;
+        prevTime = currTime;
+
+        accumulatedTime += deltaTime;
 
         ProcessInput();
 
-        Update();
+        while (accumulatedTime >= FIXED_UPDATE_TIMESTEP)
+        {
+            Update(FIXED_UPDATE_TIMESTEP);
+            accumulatedTime -= FIXED_UPDATE_TIMESTEP;
+        }
 
         Render();
 
@@ -684,11 +690,11 @@ int main(int argc, char* argv[])
             {
                 const int timeElapsed = currTime - printTime;
                 const int avgFrameTime = timeElapsed / numFrames;
-                LOG_INFO("fps: %3d, avg frame time: %3d ms", numFrames, avgFrameTime);
+                LOG_INFO("render fps: %3d, render avg frame time: %3d ms, update count: %3d", numFrames, avgFrameTime, g_UpdateCallCount);
                 numFrames = 0;
+                g_UpdateCallCount = 0;
                 printTime = currTime;
             }
-            prevTime = currTime;
         }
     }
 

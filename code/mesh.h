@@ -8,6 +8,7 @@ extern "C"
 }
 
 #include "vector.h"
+#include "triangle.h"
 
 // NOTE(sbalse): A struct for dynamic sized meshes. Contains an array of vertices, faces and the
 // rotation of the mesh.
