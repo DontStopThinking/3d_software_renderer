@@ -690,7 +690,12 @@ int main(int argc, char* argv[])
             {
                 const int timeElapsed = currTime - printTime;
                 const int avgFrameTime = timeElapsed / numFrames;
-                LOG_INFO("render fps: %3d, render avg frame time: %3d ms, update count: %3d", numFrames, avgFrameTime, g_UpdateCallCount);
+                LOG_INFO(
+                    "render fps: %3d, render avg frame time: %3d ms, update count: %3d",
+                    numFrames,
+                    avgFrameTime,
+                    g_UpdateCallCount
+                );
                 numFrames = 0;
                 g_UpdateCallCount = 0;
                 printTime = currTime;
