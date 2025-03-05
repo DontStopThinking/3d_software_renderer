@@ -12,6 +12,9 @@ code/.cache
 # Helix text editor files.
 .helix/
 
+# VSCode files.
+.vscode/
+
 # Compile score VS extension files.
 projects/compileData.**
 projects/CompileScore**
