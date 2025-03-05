@@ -13,6 +13,7 @@
     </ClCompile>
     <ClCompile Include="..\..\code\camera.cpp" />
     <ClCompile Include="..\..\code\clipping.cpp" />
+    <ClCompile Include="..\..\code\arena.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\code\common.h" />
@@ -30,6 +31,7 @@
     </ClInclude>
     <ClInclude Include="..\..\code\camera.h" />
     <ClInclude Include="..\..\code\clipping.h" />
+    <ClInclude Include="..\..\code\arena.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="extern">

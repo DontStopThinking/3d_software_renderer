@@ -1,8 +1,6 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cmath>
-#include <string_view>
-#include <array>
 #include <SDL.h>
 extern "C"
 {
@@ -11,6 +9,7 @@ extern "C"
 
 #include "log.h"
 #include "common.h"
+#include "arena.h"
 #include "vector.h"
 #include "matrix.h"
 #include "display.h"
@@ -25,7 +24,7 @@ constinit static bool g_IsRunning = false;
 
 inline constexpr size_t MAX_NUM_TRIANGLES_TO_RENDER = 10000;
 constinit static size_t g_NumTrianglesToRender = 0;
-constinit static std::array<Triangle, MAX_NUM_TRIANGLES_TO_RENDER> g_TrianglesToRender = {};
+constinit static Triangle* g_TrianglesToRender = nullptr;
 
 // TODO(sbalse): IMGUI
 constinit static bool g_Paused = false;
@@ -44,7 +43,7 @@ inline constexpr Vec3 CAMERA_UP_DIRECTION = { 0, 1, 0 };
 inline constexpr u32 TARGET_UPDATES_PER_SECOND = 30;
 inline constexpr float FIXED_UPDATE_TIMESTEP = 1.0f / TARGET_UPDATES_PER_SECOND;
 
-static void Setup()
+static void Setup(Arena* frameArena, Arena* persistentArena)
 {
     SDL_SetRelativeMouseMode(SDL_TRUE);
 
@@ -71,10 +70,40 @@ static void Setup()
     // NOTE(sbalse): Initialize clipping frustum planes with a point and a normal.
     InitFrustumPlanes(fovXRadians, FOV_Y_RADIANS, Z_NEAR, Z_FAR);
 
-    LoadMesh("assets/runway.obj", "assets/runway.png", Vec3{ 0, -1.5, +23 }, Vec3{ 1, 1, 1 }, Vec3{});
-    LoadMesh("assets/f22.obj", "assets/f22.png", Vec3{ 0, -1.3, +5 }, Vec3{ 1, 1, 1 }, Vec3{ 0, -M_PI / 2, 0 });
-    LoadMesh("assets/efa.obj", "assets/efa.png", Vec3{ -2, -1.3, +9 }, Vec3{ 1, 1, 1 }, Vec3{ 0, -M_PI / 2, 0 });
-    LoadMesh("assets/f117.obj", "assets/f117.png", Vec3{ +2, -1.3, +9 }, Vec3{ 1, 1, 1 }, Vec3{ 0, -M_PI / 2, 0 });
+    g_TrianglesToRender = PushArray(frameArena, Triangle, MAX_NUM_TRIANGLES_TO_RENDER);
+
+    LoadMesh(
+        persistentArena,
+        "assets/runway.obj",
+        "assets/runway.png",
+        Vec3{ 0, -1.5, +23 },
+        Vec3{ 1, 1, 1 },
+        Vec3{}
+    );
+    LoadMesh(
+        persistentArena,
+        "assets/f22.obj",
+        "assets/f22.png",
+        Vec3{ 0, -1.3, +5 },
+        Vec3{ 1, 1, 1 },
+        Vec3{ 0, -M_PI / 2, 0 }
+    );
+    LoadMesh(
+        persistentArena,
+        "assets/efa.obj",
+        "assets/efa.png",
+        Vec3{ -2, -1.3, +9 },
+        Vec3{ 1, 1, 1 },
+        Vec3{ 0, -M_PI / 2, 0 }
+    );
+    LoadMesh(
+        persistentArena,
+        "assets/f117.obj",
+        "assets/f117.png",
+        Vec3{ +2, -1.3, +9 },
+        Vec3{ 1, 1, 1 },
+        Vec3{ 0, -M_PI / 2, 0 }
+    );
 }
 
 static void ProcessInput()
@@ -316,8 +345,10 @@ static void ProcessGraphicsPipelineStages(const Mesh* const mesh)
     g_ViewMatrix = Mat4LookAt(GetCameraPosition(), cameraTarget, CAMERA_UP_DIRECTION);
 
     // NOTE(sbalse): Loop all faces of our mesh.
-    for (const Face& meshFace : mesh->m_Faces)
+    for (size_t meshFaceIndex = 0; meshFaceIndex < mesh->m_FacesCount; meshFaceIndex++)
     {
+        const Face meshFace = mesh->m_Faces[meshFaceIndex];
+
         // NOTE(sbalse): The 3 vertices that make up a triangle of a face.
         const Vec3 faceVertices[3] =
         {
@@ -465,13 +496,13 @@ static void ProcessGraphicsPipelineStages(const Mesh* const mesh)
             if (g_NumTrianglesToRender < MAX_NUM_TRIANGLES_TO_RENDER)
             {
                 // NOTE(sbalse): Save the projected triangle in the array of triangles to render.
-                g_TrianglesToRender[g_NumTrianglesToRender++] = triangleToRender;
+                PushStruct(triangleToRender, g_TrianglesToRender, g_NumTrianglesToRender);
             }
         }
     }
 }
 
-static void Update(const float deltaTime)
+static void Update(Arena* frameArena, const float deltaTime)
 {
     if (g_PrintFPS)
     {
@@ -479,8 +510,8 @@ static void Update(const float deltaTime)
     }
 
     // NOTE(sbalse): Clear the list of triangles to render every frame loop.
+    ArenaFree(frameArena);
     g_NumTrianglesToRender = 0;
-    g_TrianglesToRender = {};
 
     const int numOfMeshes = GetNumOfMeshes();
 
@@ -645,19 +676,28 @@ static void FreeResources()
 int main(int argc, char* argv[])
 {
 #if _DEBUG
-    const std::string_view windowTitle = "3D Renderer [DEBUG]";
+    const char* const windowTitle = "3D Renderer [DEBUG]";
 #else
-    const std::string_view windowTitle = "3D Renderer [RELEASE]";
+    const char* const windowTitle = "3D Renderer [RELEASE]";
 #endif // _DEBUG
 
-    g_IsRunning = InitializeWindow(windowTitle);
+    Arena persistentArena = {};
+    Arena frameArena = {};
+
+    ArenaCreateHeap(&persistentArena, MB(256));
+    assert(persistentArena.m_Buf && "ERROR: Failed to create a persistent arena.");
+
+    ArenaCreateHeap(&frameArena, MB(32));
+    assert(frameArena.m_Buf && "ERROR: Failed to create a frame arena.");
+
+    g_IsRunning = InitializeWindow(&persistentArena, windowTitle);
 
     if (!g_IsRunning)
     {
         return EXIT_FAILURE;
     }
 
-    Setup();
+    Setup(&frameArena, &persistentArena);
 
     u32 prevTime = SDL_GetTicks();
     u32 printTime = prevTime;
@@ -676,7 +716,7 @@ int main(int argc, char* argv[])
 
         while (accumulatedTime >= FIXED_UPDATE_TIMESTEP)
         {
-            Update(FIXED_UPDATE_TIMESTEP);
+            Update(&frameArena, FIXED_UPDATE_TIMESTEP);
             accumulatedTime -= FIXED_UPDATE_TIMESTEP;
         }
 
@@ -707,6 +747,9 @@ int main(int argc, char* argv[])
 
     DestroyWindow();
     FreeResources();
+
+    ArenaDestroyHeap(&frameArena);
+    ArenaDestroyHeap(&persistentArena);
 
     return EXIT_SUCCESS;
 }

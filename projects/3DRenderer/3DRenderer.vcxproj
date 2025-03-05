@@ -11,6 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\code\arena.cpp" />
     <ClCompile Include="..\..\code\camera.cpp" />
     <ClCompile Include="..\..\code\clipping.cpp" />
     <ClCompile Include="..\..\code\display.cpp" />
@@ -23,6 +24,7 @@
     <ClCompile Include="..\..\extern\upng-master\upng.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\code\arena.h" />
     <ClInclude Include="..\..\code\camera.h" />
     <ClInclude Include="..\..\code\clipping.h" />
     <ClInclude Include="..\..\code\colorlibrary.h" />

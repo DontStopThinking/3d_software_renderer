@@ -1,9 +1,10 @@
 #include "camera.h"
 
-#define _USE_MATH_DEFINES
 #include <cmath>
 
 #include "matrix.h"
+
+inline constexpr double M_PI_2 = 1.57079632679489661923;   // pi/2
 
 constinit static Camera g_Camera = {};
 

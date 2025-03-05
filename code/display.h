@@ -1,8 +1,8 @@
 #pragma once
-#include <string_view>
 #include <SDL.h>
 
 #include "common.h"
+#include "arena.h"
 #include "colorlibrary.h"
 
 struct ColorBuffer
@@ -49,7 +49,7 @@ enum class ShadingMethod
     FlatShading
 };
 
-bool InitializeWindow(const std::string_view windowTitle);
+bool InitializeWindow(Arena* const frameArena, const char* const windowTitle);
 void DestroyWindow();
 
 int GetWindowWidth();
@@ -65,7 +65,7 @@ void DrawRectangle(
     const u32 color
 );
 void DrawLine(const int x0, const int y0, const int x1, const int y1, const u32 color);
-void TakeScreenshot(const std::string_view fileNamePrefix);
+void TakeScreenshot(const char* const fileNamePrefix);
 
 void RenderColorBuffer();
 void RenderZBuffer();

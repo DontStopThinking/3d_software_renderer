@@ -2,7 +2,6 @@
 
 #include <cstdio>
 #include <array>
-#include <vector>
 #include <cassert>
 
 #include "log.h"
@@ -14,18 +13,18 @@ inline constexpr int MAX_NUM_MESHES = 10;
 static Mesh g_Meshes[MAX_NUM_MESHES] = {};
 constinit static int g_MeshCount = 0;
 
-static void LoadMeshObjData(const std::string_view objFileName, Mesh* const outMesh)
+static void LoadMeshObjData(Arena* arena, const char* const objFileName, Mesh* const outMesh)
 {
     assert(outMesh != nullptr);
 
     std::FILE* file = nullptr;
-    fopen_s(&file, objFileName.data(), "r");
+    fopen_s(&file, objFileName, "r");
 
-    LOG_INFO("Loading obj file: %s...", objFileName.data());
+    LOG_INFO("Loading obj file: %s...", objFileName);
 
     if (!file)
     {
-        LOG_ERROR("Failed to open obj file: %s.", objFileName.data());
+        LOG_ERROR("Failed to open obj file: %s.", objFileName);
         return;
     }
 
@@ -33,7 +32,19 @@ static void LoadMeshObjData(const std::string_view objFileName, Mesh* const outM
 
     constexpr int maxNumberOfCharactersToRead = scast<int>(line.size());
 
-    std::vector<Tex2> texcoords;
+    constexpr int maxVertices = 1024;
+    constexpr int maxFaces = 1024;
+    constexpr int maxTexcoords = 1024;
+
+    // NOTE(sbalse): Allocate memory for vertices and faces from the arena.
+    outMesh->m_Vertices = PushArray(arena, Vec3, maxVertices);
+    outMesh->m_VerticesCount = 0;
+    outMesh->m_Faces = PushArray(arena, Face, maxFaces);
+    outMesh->m_FacesCount = 0;
+
+    TempArena temp = TempArenaBegin(arena);
+    Tex2* const texCoordinates = PushArray(temp.m_OriginalArena, Tex2, maxTexcoords);
+    size_t texCoordinatesCount = 0;
 
     while (std::fgets(line.data(), maxNumberOfCharactersToRead, file))
     {
@@ -42,7 +53,7 @@ static void LoadMeshObjData(const std::string_view objFileName, Mesh* const outM
         {
             Vec3 vertex = {};
             sscanf_s(line.data(), "v %f %f %f", &vertex.m_X, &vertex.m_Y, &vertex.m_Z);
-            outMesh->m_Vertices.emplace_back(vertex);
+            PushStruct(vertex, outMesh->m_Vertices, outMesh->m_VerticesCount);
         }
 
         // NOTE(sbalse): Texture coordinate information.
@@ -50,7 +61,7 @@ static void LoadMeshObjData(const std::string_view objFileName, Mesh* const outM
         {
             Tex2 texcoord = {};
             sscanf_s(line.data(), "vt %f %f", &texcoord.m_U, &texcoord.m_V);
-            texcoords.emplace_back(texcoord);
+            PushStruct(texcoord, texCoordinates, texCoordinatesCount);
         }
 
         // NOTE(sbalse): Read face information.
@@ -64,7 +75,8 @@ static void LoadMeshObjData(const std::string_view objFileName, Mesh* const outM
                 "f %d/%d/%d %d/%d/%d %d/%d/%d",
                 &vertexIndices[0], &textureIndices[0], &normalIndices[0],
                 &vertexIndices[1], &textureIndices[1], &normalIndices[1],
-                &vertexIndices[2], &textureIndices[2], &normalIndices[2]);
+                &vertexIndices[2], &textureIndices[2], &normalIndices[2]
+            );
 
             const Face face =
             {
@@ -72,29 +84,31 @@ static void LoadMeshObjData(const std::string_view objFileName, Mesh* const outM
                 .m_A = vertexIndices[0] - 1,
                 .m_B = vertexIndices[1] - 1,
                 .m_C = vertexIndices[2] - 1,
-                .m_AUV = texcoords[textureIndices[0] - 1],
-                .m_BUV = texcoords[textureIndices[1] - 1],
-                .m_CUV = texcoords[textureIndices[2] - 1],
+                .m_AUV = texCoordinates[textureIndices[0] - 1],
+                .m_BUV = texCoordinates[textureIndices[1] - 1],
+                .m_CUV = texCoordinates[textureIndices[2] - 1],
                 .m_Color = WHITE,
             };
 
-            outMesh->m_Faces.emplace_back(face);
+            PushStruct(face, outMesh->m_Faces, outMesh->m_FacesCount);
         }
     }
 
-    LOG_INFO("Successfully loaded obj file: %s.", objFileName.data());
+    TempArenaEnd(&temp);
+
+    LOG_INFO("Successfully loaded obj file: %s.", objFileName);
 
     std::fclose(file);
 }
 
-static void LoadMeshPNGData(const std::string_view fileName, Mesh* const outMesh)
+static void LoadMeshPNGData(const char* const fileName, Mesh* const outMesh)
 {
     assert(outMesh != nullptr);
 
-    upng_t* pngImage = upng_new_from_file(fileName.data());
+    upng_t* pngImage = upng_new_from_file(fileName);
     if (pngImage == nullptr)
     {
-        LOG_ERROR("Failed to load PNG file: %s", fileName.data());
+        LOG_ERROR("Failed to load PNG file: %s", fileName);
         return;
     }
 
@@ -115,15 +129,16 @@ static void LoadMeshPNGData(const std::string_view fileName, Mesh* const outMesh
 }
 
 void LoadMesh(
-    const std::string_view objFileName,
-    const std::string_view pngFileName,
+    Arena* arena,
+    const char* const objFileName,
+    const char* const pngFileName,
     const Vec3 translation,
     const Vec3 scale,
     const Vec3 rotation
 )
 {
     // Load the OBJ
-    LoadMeshObjData(objFileName, &g_Meshes[g_MeshCount]);
+    LoadMeshObjData(arena, objFileName, &g_Meshes[g_MeshCount]);
 
     // Load the PNG
     LoadMeshPNGData(pngFileName, &g_Meshes[g_MeshCount]);

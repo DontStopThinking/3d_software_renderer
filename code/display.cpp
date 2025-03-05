@@ -1,6 +1,5 @@
 #include "display.h"
 
-#include <cstdlib>
 #include <ctime>
 #include <cmath>
 
@@ -44,7 +43,7 @@ int GetWindowHeight()
     return g_WindowHeight;
 }
 
-bool InitializeWindow(const std::string_view windowTitle)
+bool InitializeWindow(Arena* const persistentArena, const char* const windowTitle)
 {
     LOG_INFO("Initializing window...");
 
@@ -62,7 +61,7 @@ bool InitializeWindow(const std::string_view windowTitle)
 
     // NOTE(sbalse): Create an SDL window.
     g_Window = SDL_CreateWindow(
-        windowTitle.data(),
+        windowTitle,
         SDL_WINDOWPOS_CENTERED_DISPLAY(displayIndex),
         SDL_WINDOWPOS_CENTERED_DISPLAY(displayIndex),
         g_WindowWidth,
@@ -85,7 +84,7 @@ bool InitializeWindow(const std::string_view windowTitle)
 
     // NOTE(sbalse): Allocate the color buffer.
     const size_t colorBufferSize = g_WindowWidth * g_WindowHeight;
-    g_ColorBuffer.m_Buffer = rcast<u32*>(std::calloc(colorBufferSize, sizeof(u32)));
+    g_ColorBuffer.m_Buffer = PushArray(persistentArena, u32, colorBufferSize);
     g_ColorBuffer.m_Size = colorBufferSize;
 
     g_ColorBuffer.m_Texture = SDL_CreateTexture(
@@ -97,11 +96,11 @@ bool InitializeWindow(const std::string_view windowTitle)
 
     // NOTE(sbalse): Allocate the z buffer.
     const size_t zBufferUNormSize = g_WindowWidth * g_WindowHeight;
-    g_ZBuffer.m_BufferUNorm = rcast<float*>(std::calloc(zBufferUNormSize, sizeof(float)));
+    g_ZBuffer.m_BufferUNorm = PushArray(persistentArena, float, zBufferUNormSize);
     g_ZBuffer.m_BufferUNormSize = zBufferUNormSize;
 
     const size_t zBufferUIntSize = g_WindowWidth * g_WindowHeight;
-    g_ZBuffer.m_BufferUInt = rcast<u32*>(std::calloc(zBufferUIntSize, sizeof(u32)));
+    g_ZBuffer.m_BufferUInt = PushArray(persistentArena, u32, zBufferUIntSize);
     g_ZBuffer.m_BufferUIntSize = zBufferUIntSize;
 
     g_ZBuffer.m_Texture = SDL_CreateTexture(
@@ -325,7 +324,7 @@ void DrawLine(const int x0, const int y0, const int x1, const int y1, const u32 
     }
 }
 
-void TakeScreenshot(const std::string_view fileNamePrefix)
+void TakeScreenshot(const char* const fileNamePrefix)
 {
     LOG_INFO("Taking screenshot...");
 
@@ -333,7 +332,7 @@ void TakeScreenshot(const std::string_view fileNamePrefix)
     const u64 currentUnixTime = scast<u64>(std::time(nullptr));
 
     char fileNameWithTimestamp[128] = {};
-    sprintf_s(fileNameWithTimestamp, "%s-%llu.bmp", fileNamePrefix.data(), currentUnixTime);
+    sprintf_s(fileNameWithTimestamp, "%s-%llu.bmp", fileNamePrefix, currentUnixTime);
 
     int rendererWidth, rendererHeight;
     SDL_GetRendererOutputSize(g_Renderer, &rendererWidth, &rendererHeight);
@@ -363,12 +362,9 @@ void TakeScreenshot(const std::string_view fileNamePrefix)
 
 void DestroyWindow()
 {
-    std::free(g_ColorBuffer.m_Buffer);
     SDL_DestroyTexture(g_ColorBuffer.m_Texture);
     g_ColorBuffer = {};
 
-    std::free(g_ZBuffer.m_BufferUNorm);
-    std::free(g_ZBuffer.m_BufferUInt);
     SDL_DestroyTexture(g_ZBuffer.m_Texture);
     g_ZBuffer = {};
 

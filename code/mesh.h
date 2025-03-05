@@ -1,12 +1,10 @@
 #pragma once
-#include <vector>
-#include <string_view>
-
 extern "C"
 {
     #include <upng.h>
 }
 
+#include "arena.h"
 #include "vector.h"
 #include "triangle.h"
 
@@ -14,17 +12,23 @@ extern "C"
 // rotation of the mesh.
 struct Mesh
 {
-    std::vector<Vec3> m_Vertices; // NOTE(sbalse): The mesh vertices.
-    std::vector<Face> m_Faces; // NOTE(sbalse): The mesh faces.
-    upng_t* m_Texture; // NOTE(sbalse): The mesh's PNG texture.
     Vec3 m_Rotation; // NOTE(sbalse): Rotation of the mesh using x, y and z Euler angles.
     Vec3 m_Scale; // NOTE(sbalse): Scale with x, y and z values.
     Vec3 m_Translation; // NOTE(sbalse): Translation with x, y and z values.
+
+    Vec3* m_Vertices; // NOTE(sbalse): The mesh vertices.
+    size_t m_VerticesCount;
+
+    Face* m_Faces; // NOTE(sbalse): The mesh faces.
+    size_t m_FacesCount;
+
+    upng_t* m_Texture; // NOTE(sbalse): The mesh's PNG texture.
 };
 
 void LoadMesh(
-    const std::string_view objFileName,
-    const std::string_view pngFileName,
+    Arena* arena,
+    const char* const objFileName,
+    const char* const pngFileName,
     const Vec3 translation,
     const Vec3 scale,
     const Vec3 rotation

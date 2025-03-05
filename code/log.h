@@ -3,7 +3,6 @@
 #include <cstdio>
 #include <ctime>
 #include <span>
-#include <string_view>
 
 // NOTE(sbalse): Not meant to be used outside of this file.
 namespace Internal
@@ -14,9 +13,9 @@ namespace Internal
         ERROR
     };
 
-    constexpr std::string_view LOG_COLOR_RESET = "\033[0m";
-    constexpr std::string_view LOG_COLOR_GREEN = "\033[32m";
-    constexpr std::string_view LOG_COLOR_RED = "\033[31m";
+    inline constexpr const char* const LOG_COLOR_RESET = "\033[0m";
+    inline constexpr const char* const LOG_COLOR_GREEN = "\033[32m";
+    inline constexpr const char* const LOG_COLOR_RED = "\033[31m";
 
     inline void GetTimestamp(const std::span<char> buffer)
     {
@@ -29,8 +28,8 @@ namespace Internal
     template<typename... Args>
     void LogMessage(
         const LogLevel level,
-        const std::string_view color,
-        const std::string_view format,
+        const char* const color,
+        const char* const format,
         const Args... args)
     {
         std::array<char, 32> timestamp = {};
@@ -39,15 +38,15 @@ namespace Internal
         std::array<char, 1024> message = {};
         if constexpr (sizeof...(args) > 0)
         {
-            std::snprintf(message.data(), message.size(), format.data(), args...);
+            std::snprintf(message.data(), message.size(), format, args...);
         }
         else
         {
-            std::snprintf(message.data(), message.size(), "%s", format.data());
+            std::snprintf(message.data(), message.size(), "%s", format);
         }
 
         std::FILE* outStream = nullptr;
-        std::string_view logLevelStr;
+        const char* logLevelStr = nullptr;
 
         switch (level)
         {
@@ -73,11 +72,12 @@ namespace Internal
         std::fprintf(
             outStream,
             "%s[%s] %s: %s%s\n",
-            color.data(),
-            logLevelStr.data(),
+            color,
+            logLevelStr,
             timestamp.data(),
             message.data(),
-            LOG_COLOR_RESET.data());
+            LOG_COLOR_RESET
+        );
     }
 } // namespace Internal
 
