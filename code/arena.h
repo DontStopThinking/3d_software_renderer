@@ -20,6 +20,8 @@ void* ArenaAllocAligned(
     const size_t size,
     const size_t align = ARENA_DEFAULT_ALIGNMENT
 );
+
+// NOTE(sbalse): Don't need resizing right now so disabling it.
 #if 0
 void* ArenaResizeAligned(
     Arena* arena,
@@ -29,6 +31,7 @@ void* ArenaResizeAligned(
     const size_t align = ARENA_DEFAULT_ALIGNMENT
 );
 #endif
+
 void ArenaFree(Arena* const arena);
 void ArenaDestroyHeap(Arena* const arena);
 
