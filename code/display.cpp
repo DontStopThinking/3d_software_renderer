@@ -4,6 +4,7 @@
 #include <cmath>
 
 #include "log.h"
+#include "profile.h"
 
 static constinit SDL_Window* g_Window = nullptr;
 static constinit SDL_Renderer* g_Renderer = nullptr;
@@ -118,6 +119,8 @@ bool InitializeWindow(Arena* const persistentArena, const char* const windowTitl
 
 void RenderColorBuffer()
 {
+    PROFILE_EVENT();
+
     SDL_UpdateTexture(
         g_ColorBuffer.m_Texture,
         nullptr,
@@ -135,6 +138,8 @@ void RenderColorBuffer()
 
 void RenderZBuffer()
 {
+    PROFILE_EVENT();
+
     SDL_UpdateTexture(
         g_ZBuffer.m_Texture,
         nullptr,
@@ -193,6 +198,8 @@ void SetRenderBufferMethod(const RenderBufferMethod newRenderBufferMethod)
 // NOTE(sbalse): Clear our custom color buffer to the given color.
 void ClearColorBuffer(const u32 color)
 {
+    PROFILE_EVENT();
+
     const size_t size = g_ColorBuffer.m_Size;
     for (int i = 0; i < size; i++)
     {
@@ -202,6 +209,8 @@ void ClearColorBuffer(const u32 color)
 
 void ClearZBuffer()
 {
+    PROFILE_EVENT();
+
     const size_t size = g_ZBuffer.m_BufferUNormSize;
     for (int i = 0; i < size; i++)
     {
@@ -326,6 +335,8 @@ void DrawLine(const int x0, const int y0, const int x1, const int y1, const u32 
 
 void TakeScreenshot(const char* const fileNamePrefix)
 {
+    PROFILE_EVENT();
+
     LOG_INFO("Taking screenshot...");
 
     // NOTE(sbalse): Get current Unix timestamp.

@@ -1,0 +1,2 @@
+Tracy version 0.11.0
+Downloaded from: https://github.com/wolfpld/tracy/releases/tag/v0.11.1

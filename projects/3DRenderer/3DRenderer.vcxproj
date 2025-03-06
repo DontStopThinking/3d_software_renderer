@@ -5,6 +5,10 @@
       <Configuration>Debug</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Profile|x64">
+      <Configuration>Profile</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Release|x64">
       <Configuration>Release</Configuration>
       <Platform>x64</Platform>
@@ -21,6 +25,7 @@
     <ClCompile Include="..\..\code\mesh.cpp" />
     <ClCompile Include="..\..\code\triangle.cpp" />
     <ClCompile Include="..\..\code\vector.cpp" />
+    <ClCompile Include="..\..\extern\tracy\TracyClient.cpp" />
     <ClCompile Include="..\..\extern\upng-master\upng.c" />
   </ItemGroup>
   <ItemGroup>
@@ -34,6 +39,7 @@
     <ClInclude Include="..\..\code\log.h" />
     <ClInclude Include="..\..\code\matrix.h" />
     <ClInclude Include="..\..\code\mesh.h" />
+    <ClInclude Include="..\..\code\profile.h" />
     <ClInclude Include="..\..\code\texture.h" />
     <ClInclude Include="..\..\code\triangle.h" />
     <ClInclude Include="..\..\code\vector.h" />
@@ -62,6 +68,14 @@
     <CharacterSet>Unicode</CharacterSet>
     <EnableUnitySupport>true</EnableUnitySupport>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Profile|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+    <EnableUnitySupport>true</EnableUnitySupport>
+  </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
@@ -73,17 +87,26 @@
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Profile|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)..\bin\$(Configuration)\$(ProjectName)\</OutDir>
     <IntDir>$(SolutionDir)..\tmp\$(Configuration)\$(ProjectName)\</IntDir>
-    <ExternalIncludePath>$(SolutionDir)/../extern/upng-master/;$(SolutionDir)/../extern/SDL2-2.30.10/include/;$(ExternalIncludePath)</ExternalIncludePath>
+    <ExternalIncludePath>$(SolutionDir)/../extern/tracy/;$(SolutionDir)/../extern/optick/;$(SolutionDir)/../extern/upng-master/;$(SolutionDir)/../extern/SDL2-2.30.10/include/;$(ExternalIncludePath)</ExternalIncludePath>
     <LibraryPath>$(SolutionDir)/../extern/SDL2-2.30.10/lib/x64/;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)..\bin\$(Configuration)\$(ProjectName)\</OutDir>
     <IntDir>$(SolutionDir)..\tmp\$(Configuration)\$(ProjectName)\</IntDir>
-    <ExternalIncludePath>$(SolutionDir)/../extern/upng-master/;$(SolutionDir)/../extern/SDL2-2.30.10/include/;$(ExternalIncludePath)</ExternalIncludePath>
+    <ExternalIncludePath>$(SolutionDir)/../extern/tracy/;$(SolutionDir)/../extern/optick/;$(SolutionDir)/../extern/upng-master/;$(SolutionDir)/../extern/SDL2-2.30.10/include/;$(ExternalIncludePath)</ExternalIncludePath>
+    <LibraryPath>$(SolutionDir)/../extern/SDL2-2.30.10/lib/x64/;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Profile|x64'">
+    <OutDir>$(SolutionDir)..\bin\$(Configuration)\$(ProjectName)\</OutDir>
+    <IntDir>$(SolutionDir)..\tmp\$(Configuration)\$(ProjectName)\</IntDir>
+    <ExternalIncludePath>$(SolutionDir)/../extern/tracy/;$(SolutionDir)/../extern/optick/;$(SolutionDir)/../extern/upng-master/;$(SolutionDir)/../extern/SDL2-2.30.10/include/;$(ExternalIncludePath)</ExternalIncludePath>
     <LibraryPath>$(SolutionDir)/../extern/SDL2-2.30.10/lib/x64/;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -94,6 +117,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp23</LanguageStandard>
       <FloatingPointModel>Fast</FloatingPointModel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -119,7 +143,29 @@
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <Manifest>
+      <EnableDpiAwareness>PerMonitorHighDPIAware</EnableDpiAwareness>
+    </Manifest>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Profile|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;PROFILER_ENABLED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp23</LanguageStandard>
+      <FloatingPointModel>Fast</FloatingPointModel>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
       <AdditionalDependencies>SDL2.lib;SDL2main.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Manifest>

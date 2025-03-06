@@ -14,6 +14,9 @@
     <ClCompile Include="..\..\code\camera.cpp" />
     <ClCompile Include="..\..\code\clipping.cpp" />
     <ClCompile Include="..\..\code\arena.cpp" />
+    <ClCompile Include="..\..\extern\tracy\TracyClient.cpp">
+      <Filter>extern\tracy</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\code\common.h" />
@@ -32,6 +35,7 @@
     <ClInclude Include="..\..\code\camera.h" />
     <ClInclude Include="..\..\code\clipping.h" />
     <ClInclude Include="..\..\code\arena.h" />
+    <ClInclude Include="..\..\code\profile.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="extern">
@@ -39,6 +43,9 @@
     </Filter>
     <Filter Include="extern\upng">
       <UniqueIdentifier>{4510ff3e-a339-4e65-bcd8-697eba907d03}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="extern\tracy">
+      <UniqueIdentifier>{929c6762-c550-447e-afed-8f8f173df1c0}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

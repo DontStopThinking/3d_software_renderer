@@ -19,6 +19,7 @@ extern "C"
 #include "camera.h"
 #include "clipping.h"
 #include "triangle.h"
+#include "profile.h"
 
 constinit static bool g_IsRunning = false;
 
@@ -108,6 +109,8 @@ static void Setup(Arena* frameArena, Arena* persistentArena)
 
 static void ProcessInput()
 {
+    PROFILE_EVENT();
+
     SDL_Event event = {};
 
     while (SDL_PollEvent(&event))
@@ -313,6 +316,8 @@ static void ProcessInput()
 //
 static void ProcessGraphicsPipelineStages(const Mesh* const mesh)
 {
+    PROFILE_EVENT_SCOPED_BEGIN(_, "ProcessGraphicsPipelineStages");
+
     // NOTE(sbalse): Create scale, translation, and rotation matrices that will be
     // multiplied with our mesh vertices.
     const Mat4 scaleMatrix = Mat4MakeScale(
@@ -504,6 +509,8 @@ static void ProcessGraphicsPipelineStages(const Mesh* const mesh)
 
 static void Update(Arena* frameArena, const float deltaTime)
 {
+    PROFILE_EVENT();
+
     if (g_PrintFPS)
     {
         g_UpdateCallCount++;
@@ -540,6 +547,8 @@ static void Update(Arena* frameArena, const float deltaTime)
 
 static void Render()
 {
+    PROFILE_EVENT();
+
     ClearColorBuffer(BLACK);
     ClearZBuffer();
 
@@ -548,111 +557,115 @@ static void Render()
         DrawGrid();
     }
 
-    // NOTE(sbalse): Loop all projected triangles and render them.
-    for (int currentTriangleIndex = 0;
-        currentTriangleIndex < g_NumTrianglesToRender;
-        currentTriangleIndex++)
     {
-        const Triangle& currentTriangle = g_TrianglesToRender[currentTriangleIndex];
+        PROFILE_EVENT_SCOPED_BEGIN(drawTrianglesProfileZone, "Draw Many Triangles");
 
-        const RenderMethod currentRenderMethod = GetRenderMethod();
-        if (currentRenderMethod == RenderMethod::FillTriangle
-            || currentRenderMethod == RenderMethod::FillTriangleWire)
+        // NOTE(sbalse): Loop all projected triangles and render them.
+        for (int currentTriangleIndex = 0;
+            currentTriangleIndex < g_NumTrianglesToRender;
+            currentTriangleIndex++)
         {
-            // NOTE(sbalse): Draw mesh face triangles.
-            DrawFilledTriangle(
-                // NOTE(sbalse): vertex A.
-                scast<int>(currentTriangle.m_Points[0].m_X),
-                scast<int>(currentTriangle.m_Points[0].m_Y),
-                currentTriangle.m_Points[0].m_Z,
-                currentTriangle.m_Points[0].m_W,
-                // NOTE(sbalse): vertex B.
-                scast<int>(currentTriangle.m_Points[1].m_X),
-                scast<int>(currentTriangle.m_Points[1].m_Y),
-                currentTriangle.m_Points[1].m_Z,
-                currentTriangle.m_Points[1].m_W,
-                // NOTE(sbalse): vertex C.
-                scast<int>(currentTriangle.m_Points[2].m_X),
-                scast<int>(currentTriangle.m_Points[2].m_Y),
-                currentTriangle.m_Points[2].m_Z,
-                currentTriangle.m_Points[2].m_W,
-                // NOTE(sbalse): The color.
-                currentTriangle.m_Color
-            );
-        }
+            const Triangle& currentTriangle = g_TrianglesToRender[currentTriangleIndex];
 
-        if (currentRenderMethod == RenderMethod::WireVertex)
-        {
-            // NOTE(sbalse): Draw the cube corner vertices.
-            DrawRectangle(
-                scast<int>(currentTriangle.m_Points[0].m_X - 3),
-                scast<int>(currentTriangle.m_Points[0].m_Y - 3),
-                6,
-                6,
-                RED
-            );
-            DrawRectangle(
-                scast<int>(currentTriangle.m_Points[1].m_X - 3),
-                scast<int>(currentTriangle.m_Points[1].m_Y - 3),
-                6,
-                6,
-                RED
-            );
-            DrawRectangle(
-                scast<int>(currentTriangle.m_Points[2].m_X - 3),
-                scast<int>(currentTriangle.m_Points[2].m_Y - 3),
-                6,
-                6,
-                RED
-            );
-        }
+            const RenderMethod currentRenderMethod = GetRenderMethod();
+            if (currentRenderMethod == RenderMethod::FillTriangle
+                || currentRenderMethod == RenderMethod::FillTriangleWire)
+            {
+                // NOTE(sbalse): Draw mesh face triangles.
+                DrawFilledTriangle(
+                    // NOTE(sbalse): vertex A.
+                    scast<int>(currentTriangle.m_Points[0].m_X),
+                    scast<int>(currentTriangle.m_Points[0].m_Y),
+                    currentTriangle.m_Points[0].m_Z,
+                    currentTriangle.m_Points[0].m_W,
+                    // NOTE(sbalse): vertex B.
+                    scast<int>(currentTriangle.m_Points[1].m_X),
+                    scast<int>(currentTriangle.m_Points[1].m_Y),
+                    currentTriangle.m_Points[1].m_Z,
+                    currentTriangle.m_Points[1].m_W,
+                    // NOTE(sbalse): vertex C.
+                    scast<int>(currentTriangle.m_Points[2].m_X),
+                    scast<int>(currentTriangle.m_Points[2].m_Y),
+                    currentTriangle.m_Points[2].m_Z,
+                    currentTriangle.m_Points[2].m_W,
+                    // NOTE(sbalse): The color.
+                    currentTriangle.m_Color
+                );
+            }
 
-        // NOTE(sbalse): Draw textured triangle.
-        if (currentRenderMethod == RenderMethod::Textured
-            || currentRenderMethod == RenderMethod::WireTextured)
-        {
-            DrawTexturedTriangle(
-                // NOTE(sbalse): vertex A.
-                scast<int>(currentTriangle.m_Points[0].m_X),
-                scast<int>(currentTriangle.m_Points[0].m_Y),
-                currentTriangle.m_Points[0].m_Z,
-                currentTriangle.m_Points[0].m_W,
-                currentTriangle.m_TexCoords[0].m_U,
-                currentTriangle.m_TexCoords[0].m_V,
-                // NOTE(sbalse): vertex B.
-                scast<int>(currentTriangle.m_Points[1].m_X),
-                scast<int>(currentTriangle.m_Points[1].m_Y),
-                currentTriangle.m_Points[1].m_Z,
-                currentTriangle.m_Points[1].m_W,
-                currentTriangle.m_TexCoords[1].m_U,
-                currentTriangle.m_TexCoords[1].m_V,
-                // NOTE(sbalse): vertex C.
-                scast<int>(currentTriangle.m_Points[2].m_X),
-                scast<int>(currentTriangle.m_Points[2].m_Y),
-                currentTriangle.m_Points[2].m_Z,
-                currentTriangle.m_Points[2].m_W,
-                currentTriangle.m_TexCoords[2].m_U,
-                currentTriangle.m_TexCoords[2].m_V,
-                // NOTE(sbalse): The texture.
-                currentTriangle.m_Texture
-            );
-        }
+            if (currentRenderMethod == RenderMethod::WireVertex)
+            {
+                // NOTE(sbalse): Draw the cube corner vertices.
+                DrawRectangle(
+                    scast<int>(currentTriangle.m_Points[0].m_X - 3),
+                    scast<int>(currentTriangle.m_Points[0].m_Y - 3),
+                    6,
+                    6,
+                    RED
+                );
+                DrawRectangle(
+                    scast<int>(currentTriangle.m_Points[1].m_X - 3),
+                    scast<int>(currentTriangle.m_Points[1].m_Y - 3),
+                    6,
+                    6,
+                    RED
+                );
+                DrawRectangle(
+                    scast<int>(currentTriangle.m_Points[2].m_X - 3),
+                    scast<int>(currentTriangle.m_Points[2].m_Y - 3),
+                    6,
+                    6,
+                    RED
+                );
+            }
 
-        if (currentRenderMethod == RenderMethod::Wire
-            || currentRenderMethod == RenderMethod::WireVertex
-            || currentRenderMethod == RenderMethod::FillTriangleWire
-            || currentRenderMethod == RenderMethod::WireTextured)
-        {
-            // NOTE(sbalse): Draw mesh wireframe triangles.
-            DrawTriangle(
-                scast<int>(currentTriangle.m_Points[0].m_X),
-                scast<int>(currentTriangle.m_Points[0].m_Y),
-                scast<int>(currentTriangle.m_Points[1].m_X),
-                scast<int>(currentTriangle.m_Points[1].m_Y),
-                scast<int>(currentTriangle.m_Points[2].m_X),
-                scast<int>(currentTriangle.m_Points[2].m_Y),
-                WHITE
-            );
+            // NOTE(sbalse): Draw textured triangle.
+            if (currentRenderMethod == RenderMethod::Textured
+                || currentRenderMethod == RenderMethod::WireTextured)
+            {
+                DrawTexturedTriangle(
+                    // NOTE(sbalse): vertex A.
+                    scast<int>(currentTriangle.m_Points[0].m_X),
+                    scast<int>(currentTriangle.m_Points[0].m_Y),
+                    currentTriangle.m_Points[0].m_Z,
+                    currentTriangle.m_Points[0].m_W,
+                    currentTriangle.m_TexCoords[0].m_U,
+                    currentTriangle.m_TexCoords[0].m_V,
+                    // NOTE(sbalse): vertex B.
+                    scast<int>(currentTriangle.m_Points[1].m_X),
+                    scast<int>(currentTriangle.m_Points[1].m_Y),
+                    currentTriangle.m_Points[1].m_Z,
+                    currentTriangle.m_Points[1].m_W,
+                    currentTriangle.m_TexCoords[1].m_U,
+                    currentTriangle.m_TexCoords[1].m_V,
+                    // NOTE(sbalse): vertex C.
+                    scast<int>(currentTriangle.m_Points[2].m_X),
+                    scast<int>(currentTriangle.m_Points[2].m_Y),
+                    currentTriangle.m_Points[2].m_Z,
+                    currentTriangle.m_Points[2].m_W,
+                    currentTriangle.m_TexCoords[2].m_U,
+                    currentTriangle.m_TexCoords[2].m_V,
+                    // NOTE(sbalse): The texture.
+                    currentTriangle.m_Texture
+                );
+            }
+
+            if (currentRenderMethod == RenderMethod::Wire
+                || currentRenderMethod == RenderMethod::WireVertex
+                || currentRenderMethod == RenderMethod::FillTriangleWire
+                || currentRenderMethod == RenderMethod::WireTextured)
+            {
+                // NOTE(sbalse): Draw mesh wireframe triangles.
+                DrawTriangle(
+                    scast<int>(currentTriangle.m_Points[0].m_X),
+                    scast<int>(currentTriangle.m_Points[0].m_Y),
+                    scast<int>(currentTriangle.m_Points[1].m_X),
+                    scast<int>(currentTriangle.m_Points[1].m_Y),
+                    scast<int>(currentTriangle.m_Points[2].m_X),
+                    scast<int>(currentTriangle.m_Points[2].m_Y),
+                    WHITE
+                );
+            }
         }
     }
 
@@ -677,6 +690,8 @@ int main(int argc, char* argv[])
 {
 #if _DEBUG
     const char* const windowTitle = "3D Renderer [DEBUG]";
+#elif PROFILER_ENABLED
+    const char* const windowTitle = "3D Renderer [PROFILE]";
 #else
     const char* const windowTitle = "3D Renderer [RELEASE]";
 #endif // _DEBUG
@@ -684,10 +699,10 @@ int main(int argc, char* argv[])
     Arena persistentArena = {};
     Arena frameArena = {};
 
-    ArenaCreateHeap(&persistentArena, MB(256));
+    ArenaCreateHeap(&persistentArena, MEGABYTES(256));
     assert(persistentArena.m_Buf && "ERROR: Failed to create a persistent arena.");
 
-    ArenaCreateHeap(&frameArena, MB(32));
+    ArenaCreateHeap(&frameArena, MEGABYTES(32));
     assert(frameArena.m_Buf && "ERROR: Failed to create a frame arena.");
 
     g_IsRunning = InitializeWindow(&persistentArena, windowTitle);
@@ -721,6 +736,8 @@ int main(int argc, char* argv[])
         }
 
         Render();
+
+        PROFILE_FRAME();
 
         // NOTE(sbalse): Print the FPS and average frame time.
         if (g_PrintFPS)

@@ -10,5 +10,5 @@ using u64 = std::uint64_t;
 #define scast static_cast
 #define rcast reinterpret_cast
 
-#define KB(x) (scast<size_t>(x) * 1024)
-#define MB(x) (KB(x) * 1024)
+#define KILOBYTES(x) (scast<size_t>(x) * 1024)
+#define MEGABYTES(x) (KILOBYTES(x) * 1024)

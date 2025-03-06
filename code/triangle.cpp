@@ -1,5 +1,7 @@
 #include "triangle.h"
 
+#include <cmath>
+
 #include "display.h"
 
 #define SWAP(Type, v1, v2) \
