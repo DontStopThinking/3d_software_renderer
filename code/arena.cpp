@@ -3,6 +3,8 @@
 #include <cstdlib>
 #include <cstring>
 
+#include "profile.h"
+
 static bool IsPowerOfTwo(const uintptr_t val)
 {
     return (val & (val - 1)) == 0;
@@ -36,6 +38,9 @@ void ArenaCreateHeap(Arena* const arena, const size_t size)
 {
     u8* buf = rcast<u8*>(std::malloc(size));
     assert(buf && "ERROR: Failed to allocate memory.");
+
+    PROFILE_MEMORY_ALLOC(buf, size);
+
     ArenaInit(arena, buf, size);
 }
 
@@ -132,6 +137,7 @@ void ArenaDestroyHeap(Arena* const arena)
     arena->m_BufLen = 0;
     arena->m_PrevOffset = 0;
     arena->m_CurrOffset = 0;
+    PROFILE_MEMORY_FREE(arena->m_Buf);
 }
 
 TempArena TempArenaBegin(Arena* const originalArena)
